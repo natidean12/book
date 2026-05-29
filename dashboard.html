@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Cosmic Bloom Journal ✨</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+  <style>
+    :root {
+      --coquette-pink: #fbc8d4;
+      --coquette-light: #fff5f6;
+      --vintage-gold: #cca05a;
+      --text-main: #3a1d21;
+      --text-muted: #8c6267;
+      --glass-card: rgba(255, 255, 255, 0.55);
+      --border-line: rgba(204, 160, 90, 0.25);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--text-main);
+      background: linear-gradient(135deg, var(--coquette-light) 0%, var(--coquette-pink) 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* BARRA DE NAVEGAÇÃO */
+    .top-navbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 40px; background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--border-line); position: sticky; top: 0; z-index: 1000;
+    }
+    .brand-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.8rem; font-weight: 700; }
+    
+    .nav-menu { display: flex; gap: 20px; }
+    .nav-menu a { 
+      color: var(--text-main); text-decoration: none; font-weight: 500; font-size: 0.9rem;
+      padding: 8px 16px; border-radius: 15px; transition: all 0.3s;
+    }
+    .nav-menu a.active { background: var(--text-main); color: white; border: 1px solid var(--vintage-gold); }
+
+    /* LAYOUT DE DIÁRIO */
+    .main-layout { max-width: 1100px; width: 100%; margin: 0 auto; padding: 40px 20px 100px; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 25px; }
+
+    .journal-timeline { display: flex; flex-direction: column; gap: 25px; }
+
+    .journal-row {
+      background: var(--glass-card); border: 1px solid var(--border-line);
+      border-radius: 24px; padding: 25px; display: flex; gap: 30px;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(58, 29, 33, 0.03);
+      transition: transform 0.3s ease; position: relative;
+    }
+    .journal-row:hover { transform: translateY(-3px); }
+
+    /* FOTO DA CAPA (EXTRAÍDA DO PDF) */
+    .cover-container { width: 130px; flex-shrink: 0; cursor: pointer; }
+    .book-cover {
+      width: 100%; aspect-ratio: 2/3; object-fit: cover;
+      border-radius: 14px; box-shadow: 0 8px 20px rgba(58, 29, 33, 0.15);
+      border: 1px solid rgba(204, 160, 90, 0.2);
+      background-color: #ebdcd5;
+    }
+
+    /* DETALHES */
+    .book-details-box { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .book-meta-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .book-title-text { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--text-main); font-weight: 600; }
+    .book-author-text { font-size: 0.9rem; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+    
+    .badge-status {
+      padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; background: #fff; border: 1px solid var(--border-line);
+    }
+    .status-lido { color: #cca05a; background: #fffcf5; }
+    .status-lendo { color: #fcaec1; background: #fff5f6; }
+    .status-quero { color: #8c6267; background: #f0e6e8; }
+
+    .book-middle-row { display: flex; gap: 30px; margin: 12px 0; align-items: center; }
+    .info-stats-mini { font-size: 0.85rem; color: var(--text-muted); }
+    .info-stats-mini strong { color: var(--text-main); font-size: 1rem; }
+    
+    .stars-display { color: var(--vintage-gold); font-size: 1.1rem; letter-spacing: 2px; }
+    .half-star { position: relative; display: inline-block; color: rgba(58, 29, 33, 0.1); }
+    .half-star::before { content: "★"; position: absolute; left: 0; width: 50%; overflow: hidden; color: var(--vintage-gold); }
+
+    /* BOTÕES */
+    .action-row-end { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid rgba(204,160,90,0.1); padding-top: 12px; }
+    .action-row-end button {
+      background: white; border: 1px solid var(--border-line); padding: 8px 16px;
+      border-radius: 14px; cursor: pointer; font-family: 'Montserrat', sans-serif;
+      font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 6px;
+      transition: all 0.2s;
+    }
+    .action-row-end button:hover { border-color: var(--vintage-gold); background: var(--coquette-light); }
+    .read-pdf-btn { background: var(--text-main) !important; color: white !important; border: 1px solid var(--vintage-gold) !important; }
+    .del-btn-line.warning { background: #ff5e5e !important; color: white !important; }
+
+    /* BOTÃO FLUTUANTE ADICIONAR */
+    #addBtn {
+      position: fixed; bottom: 35px; right: 35px; width: 60px; height: 60px; border-radius: 50%;
+      background: var(--text-main); color: white; border: 2px solid var(--vintage-gold);
+      font-size: 2rem; cursor: pointer; z-index: 1100; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 25px rgba(58, 29, 33, 0.25);
+    }
+
+    /* MODAL FORMULÁRIO */
+    .modal {
+      position: fixed; inset: 0; background: rgba(58, 29, 33, 0.4);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      display: flex; align-items: center; justify-content: center; z-index: 2000;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .modal.show { opacity: 1; visibility: visible; }
+    .modal-content {
+      background: #fffbfa; border: 2px solid var(--vintage-gold); padding: 30px;
+      border-radius: 28px; width: 90%; max-width: 460px; box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+    }
+    .modal-content h2 { text-align: center; margin-bottom: 15px; font-family: 'Playfair Display', serif; font-style: italic; }
+    
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    
+    input, select {
+      width: 100%; padding: 12px; border-radius: 12px;
+      border: 1px solid var(--border-line); background: white; font-family: 'Montserrat', sans-serif; outline: none;
+    }
+
+    #starsSelect { text-align: center; font-size: 2.8rem; margin: 5px 0; letter-spacing: 4px; }
+    #starsSelect span { cursor: pointer; color: rgba(58, 29, 33, 0.1); position: relative; display: inline-block; }
+    #starsSelect span.selected { color: var(--vintage-gold); }
+    
+    .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
+    .modal-buttons button { flex: 1; padding: 14px; border: none; border-radius: 14px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; }
+    #saveBook { background: var(--text-main); color: white; border: 1px solid var(--vintage-gold); }
+    #closeModal { background: rgba(58, 29, 33, 0.06); color: var(--text-main); }
+
+    /* Indicador de carregando capa */
+    .loading-cover-text { font-size: 0.8rem; color: #cca05a; display: none; font-weight: 600; animation: pulse 1.5s infinite; text-align: center; margin-top: 4px; }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+    @media (max-width: 768px) {
+      .top-navbar { padding: 15px 20px; flex-direction: column; gap: 10px; }
+      .journal-row { flex-direction: column; gap: 15px; padding: 20px; }
+      .cover-container { width: 110px; margin: 0 auto; }
+      .action-row-end { justify-content: space-around; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-navbar">
+    <div class="brand-title">Cosmic Bloom</div>
+    <nav class="nav-menu">
+      <a href="livros.html" class="active">Livros</a>
+      <a href="challenge.html">Desafios</a>
+      <a href="calendario.html">Agenda</a>
+    </nav>
+  </header>
+
+  <main class="main-layout">
+    <section>
+      <h2 class="section-title">📜 Minha Estante de Relíquias</h2>
+      <div class="journal-timeline" id="timelineLivros"></div>
+    </section>
+  </main>
+
+  <button id="addBtn">＋</button>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Novo Registro Literário</h2>
+      
+      <div class="form-group">
+        <label>Selecione seu E-book/Livro em PDF 📕</label>
+        <input type="file" id="pdfFile" accept=".pdf">
+        <div class="loading-cover-text" id="loadCoverText">✨ Extraindo a capa real do PDF...</div>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="inputTitle" placeholder="Título do Livro">
+      </div>
+      
+      <div class="form-group">
+        <input type="text" id="inputAutor" placeholder="Autor(a)">
+      </div>
+
+      <div class="form-group">
+        <input type="number" id="inputPages" placeholder="Total de Páginas">
+      </div>
+
+      <div class="form-group">
+        <input type="number" id="inputYear" placeholder="Ano de Leitura" value="2026">
+      </div>
+
+      <div class="form-group">
+        <select id="statusSelect">
+          <option value="lendo">📖 Lendo Agora</option>
+          <option value="lido">📕 Já Concluí</option>
+          <option value="quero">📘 Quero Ler</option>
+        </select>
+      </div>
+      
+      <div id="starsSelect">
+        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+      </div>
+      
+      <div class="modal-buttons">
+        <button id="closeModal">Voltar</button>
+        <button id="saveBook">Salvar na Estante</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="pdfCanvas" style="display: none;"></canvas>
+
+  <script>
+    // Configura o PDF.js Worker localmente
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    const dbName = "CosmicBloomPDFStore"; const storeName = "livros"; let db;
+
+    const initDB = () => {
+      return new Promise((resolve) => {
+        const request = indexedDB.open(dbName, 1);
+        request.onupgradeneeded = (e) => { e.target.result.createObjectStore(storeName, { keyPath: "id" }); };
+        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      });
+    };
+
+    const getAllBooks = () => {
+      return new Promise((resolve) => {
+        const tx = db.transaction([storeName], "readonly");
+        tx.objectStore(storeName).getAll().onsuccess = (e) => resolve(e.target.result || []);
+      });
+    };
+
+    const saveBookDB = (book) => {
+      return new Promise((resolve) => {
+        const tx = db.transaction([storeName], "readwrite");
+        tx.objectStore(storeName).put(book);
+        tx.oncomplete = () => resolve();
+      });
+    };
+
+    const deleteBookDB = (id) => {
+      return new Promise((resolve) => {
+        const tx = db.transaction([storeName], "readwrite");
+        tx.objectStore(storeName).delete(id);
+        tx.oncomplete = () => resolve();
+      });
+    };
+
+    let books = []; let selectedStars = 0; let extractedCoverBase64 = ""; let selectedPdfBase64 = ""; let editId = null;
+
+    async function atualizarInterface() {
+      books = await getAllBooks();
+      renderTimeline();
+    }
+
+    function renderStarsHtml(val) {
+      let html = '';
+      for (let i = 1; i <= 5; i++) {
+        if (i <= Math.floor(val)) html += '<span>★</span>';
+        else html += '<span style="color:rgba(58,29,33,0.1)">★</span>';
+      }
+      return html;
+    }
+
+    // LEITOR DE ARQUIVO PDF SALVO NA MEMÓRIA
+    function abrirPDF(base64Data, titulo) {
+      const arr = base64Data.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]); let n = bstr.length; const u8arr = new Uint8Array(n);
+      while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+      const file = new Blob([u8arr], {type:mime});
+      const fileURL = URL.createObjectURL(file);
+      
+      const win = window.open();
+      if(win) {
+        win.document.write(`<title>${titulo}</title><body style="margin:0;"><embed src="${fileURL}" type="application/pdf" width="100%" height="100%"></body>`);
+      } else {
+        window.location.href = fileURL;
+      }
+    }
+
+    function renderTimeline() {
+      const timeline = document.getElementById("timelineLivros");
+      timeline.innerHTML = "";
+      
+      if(books.length === 0) {
+        timeline.innerHTML = `<p style="text-align:center; padding:40px; opacity:0.6;">Sua biblioteca está vazia. Toque no ＋ para subir seu primeiro PDF! 🌸</p>`;
+        return;
+      }
+
+      books.sort((a,b) => b.year - a.year).forEach(book => {
+        const row = document.createElement("div");
+        row.className = "journal-row";
+        
+        // Se houver capa extraída usa ela, senão põe um placeholder elegante
+        const capaImg = book.capa ? book.capa : "https://i.ibb.co/C07F1kL/placeholder-book-cover.png";
+
+        row.innerHTML = `
+          <div class="cover-container">
+            <img src="${capaImg}" class="book-cover" loading="lazy">
+          </div>
+          <div class="book-details-box">
+            <div>
+              <div class="book-meta-top">
+                <div>
+                  <h3 class="book-title-text">${book.title}</h3>
+                  <p class="book-author-text">por ${book.autor}</p>
+                </div>
+                <span class="badge-status status-${book.status}">${book.status}</span>
+              </div>
+              <div class="book-middle-row">
+                <div class="info-stats-mini">Volume: <strong>${book.pages} pgs</strong></div>
+                <div class="info-stats-mini">Ano: <strong>${book.year}</strong></div>
+                <div class="stars-display">${renderStarsHtml(book.estrelas)}</div>
+              </div>
+            </div>
+            <div class="action-row-end">
+              ${book.pdfData ? `<button class="read-pdf-btn">📖 Ler PDF</button>` : ''}
+              <button class="edit-btn">✏️ Editar</button>
+              <button class="del-btn-line">🗑️ Apagar</button>
+            </div>
+          </div>
+        `;
+
+        if(book.pdfData) {
+          row.querySelector(".read-pdf-btn").onclick = () => abrirPDF(book.pdfData, book.title);
+          row.querySelector(".cover-container").onclick = () => abrirPDF(book.pdfData, book.title);
+        }
+
+        row.querySelector(".del-btn-line").onclick = async function() {
+          if (!this.classList.contains("warning")) {
+            this.classList.add("warning");
+            setTimeout(() => this.classList.remove("warning"), 2000);
+          } else {
+            await deleteBookDB(book.id);
+            atualizarInterface();
+          }
+        };
+
+        row.querySelector(".edit-btn").onclick = () => {
+          editId = book.id; selectedStars = book.estrelas; extractedCoverBase64 = book.capa || ""; selectedPdfBase64 = book.pdfData || "";
+          document.getElementById("inputTitle").value = book.title;
+          document.getElementById("inputAutor").value = book.autor;
+          document.getElementById("inputPages").value = book.pages;
+          document.getElementById("inputYear").value = book.year;
+          document.getElementById("statusSelect").value = book.status;
+          atualizarEstrelasVisual();
+          document.getElementById("modal").classList.add("show");
+        };
+
+        timeline.appendChild(row);
+      });
+    }
+
+    // --- MÁGICA DE EXTRAÇÃO DA PRIMEIRA PÁGINA DO PDF ---
+    document.getElementById("pdfFile").onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      document.getElementById("loadCoverText").style.display = "block";
+
+      // 1. Salva o PDF como string binária para leitura posterior
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        selectedPdfBase64 = event.target.result;
+        
+        // 2. Carrega o arquivo no processador PDF.js
+        const typedarray = new Uint8Array(this.result.split(',')[1].match(/.{1,2}/g).map(v => parseInt(v, 16)));
+        // Método alternativo direto e seguro usando ArrayBuffer
+        const fileReaderBuffer = new FileReader();
+        fileReaderBuffer.onload = function() {
+          const arrayBuffer = this.result;
+          
+          pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(function(pdf) {
+            // Auto-preenche o total de páginas com o valor real do PDF!
+            document.getElementById("inputPages").value = pdf.numPages;
+            
+            // Pega a página 1 (Capa)
+            pdf.getPage(1).then(function(page) {
+              const scale = 1.0;
+              const viewport = page.getViewport({ scale: scale });
+              const canvas = document.getElementById('pdfCanvas');
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+              };
+              
+              // Renderiza a página dentro do canvas invisível
+              page.render(renderContext).promise.then(function() {
+                // Transforma o canvas em uma imagem JPG compacta para guardar no banco
+                extractedCoverBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById("loadCoverText").innerText = "✨ Capa do PDF extraída com sucesso!";
+                setTimeout(() => { document.getElementById("loadCoverText").style.display = "none"; }, 2000);
+              });
+            });
+          });
+        };
+        fileReaderBuffer.readAsArrayBuffer(file);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    document.querySelectorAll("#starsSelect span").forEach((s, i) => {
+      s.onclick = () => { selectedStars = i + 1; atualizarEstrelasVisual(); };
+    });
+
+    function atualizarEstrelasVisual() {
+      document.querySelectorAll("#starsSelect span").forEach((s, i) => {
+        s.classList.toggle("selected", i < selectedStars);
+      });
+    }
+
+    document.getElementById("addBtn").onclick = () => {
+      editId = null; selectedStars = 0; extractedCoverBase64 = ""; selectedPdfBase64 = "";
+      document.getElementById("inputTitle").value = "";
+      document.getElementById("inputAutor").value = "";
+      document.getElementById("inputPages").value = "";
+      document.getElementById("pdfFile").value = "";
+      document.getElementById("loadCoverText").innerText = "✨ Extraindo a capa real do PDF...";
+      document.getElementById("loadCoverText").style.display = "none";
+      atualizarEstrelasVisual();
+      document.getElementById("modal").classList.add("show");
+    };
+
+    document.getElementById("closeModal").onclick = () => document.getElementById("modal").classList.remove("show");
+
+    document.getElementById("saveBook").onclick = async () => {
+      const bookData = {
+        id: editId || crypto.randomUUID(),
+        title: document.getElementById("inputTitle").value || "Relíquia Sem Título",
+        autor: document.getElementById("inputAutor").value || "Autor Desconhecido",
+        pages: parseInt(document.getElementById("inputPages").value) || 0,
+        year: parseInt(document.getElementById("inputYear").value) || 2026,
+        status: document.getElementById("statusSelect").value,
+        estrelas: selectedStars,
+        capa: extractedCoverBase64, // Foto extraída automaticamente da 1ª página do seu PDF
+        pdfData: selectedPdfBase64
+      };
+
+      await saveBookDB(bookData);
+      document.getElementById("modal").classList.remove("show");
+      atualizarInterface();
+    };
+
+    initDB().then(() => atualizarInterface());
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="apple-touch-icon" href="icons/capa-coquette.png">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
+  <title>Cosmic Book ✨</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-rose: #fcaec1;      /* Rosa vivo das pétalas */
+      --soft-pink: #fbc8d4;         /* Rosa pastel suave dos livros */
+      --vintage-gold: #cca05a;      /* Dourado elegante */
+      --bg-overlay: rgba(64, 36, 41, 0.6); /* Filtro meia força aconchegante */
+      --text-light: #fff2f5;        
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden; height: 100vh;
+      
+      /* IMAGEM DE FUNDO NA TELA INTEIRA */
+      background: 
+        linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+        url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .splash-container {
+      position: fixed; inset: 0;
+      display: flex; justify-content: center; align-items: center; text-align: center;
+      z-index: 9999;
+      background: transparent; /* Deixa o fundo do body aparecer */
+      backdrop-filter: blur(5px); /* Efeito fosco na imagem */
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .brand-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic; font-weight: 700;
+      color: var(--soft-pink); 
+      font-size: 3.2rem;
+      margin: 0 0 10px 0;
+      text-shadow: 0 0 15px rgba(251, 200, 212, 0.5);
+    }
+
+    .brand-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-light);
+      opacity: 0.9;
+      font-weight: 300;
+      margin: 0;
+      font-style: italic;
+    }
+
+    .loader {
+      margin-top: 30px;
+      font-size: 1.8rem;
+      color: var(--primary-rose);
+      animation: pulsar 1.5s infinite ease-in-out;
+    }
+
+    .splash-container.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 1s ease, visibility 1s ease;
+    }
+
+    @keyframes pulsar {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.25); opacity: 1; color: var(--vintage-gold); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="splash-screen" class="splash-container">
+    <div class="splash-content">
+      <h1 class="brand-title">Cosmic Bloom</h1>
+      <p id="frase-efeito" class="brand-subtitle">“Um leitor vive mil vidas.”</p>
+      <div class="loader">✨</div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const frases = [
+      "“Um leitor vive mil vidas.”",
+      "“Livros são sonhos em papel.”",
+      "“Cada página é um refúgio.”",
+      "“Ler é um ato de cuidado.”"
+    ];
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const fraseEl = document.getElementById("frase-efeito");
+      const indiceAleatorio = Math.floor(Math.random() * frases.length);
+      fraseEl.textContent = frases[indiceAleatorio];
+
+      setTimeout(() => {
+        const splash = document.getElementById("splash-screen");
+        splash.classList.add("hidden");
+        window.location.href = "anos.html"; 
+      }, 3000); 
+    });
+  </script>
+</body>
+</html>
