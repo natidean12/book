@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cosmic Bloom • Favoritos ✨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-rose: #fcaec1;
+      --soft-pink: #fbc8d4;
+      --bg-overlay: rgba(58, 29, 33, 0.75);
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(251, 200, 212, 0.2);
+      --text-light: #fff2f5;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: var(--text-light);
+      background: linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+                  url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
+      background-attachment: fixed;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 250px; background: rgba(58, 29, 33, 0.4); backdrop-filter: blur(20px);
+      border-right: 1px solid var(--card-border); padding: 30px 20px; position: fixed; height: 100vh;
+    }
+    .nav-brand { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; color: var(--soft-pink); font-size: 2.2rem; text-align: center; margin-bottom: 40px; text-shadow: 0 0 15px rgba(251, 200, 212, 0.3); }
+    .nav-link { color: var(--text-light); text-decoration: none; padding: 14px; display: flex; align-items: center; gap: 10px; border-radius: 20px; margin-bottom: 10px; }
+    .nav-link.active { background: var(--soft-pink); color: #3a1d21; font-weight: bold; }
+
+    /* CONTENT */
+    .main-content { margin-left: 250px; padding: 40px; flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .header-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-style: italic; color: var(--soft-pink); margin-bottom: 10px; text-align: center; }
+    .header-subtitle { font-size: 0.9rem; color: var(--primary-rose); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; opacity: 0.8; }
+
+    .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; padding-bottom: 100px; }
+    .month-card { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid var(--card-border); padding: 18px; border-radius: 30px; text-align: center; cursor: pointer; transition: 0.4s; }
+    .month-card:hover { transform: translateY(-5px); border-color: var(--soft-pink); }
+
+    .month-name { font-weight: 700; color: var(--soft-pink); margin-bottom: 15px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1.5px; }
+    .photo-frame { width: 100%; aspect-ratio: 2/3; background: rgba(0, 0, 0, 0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px dashed var(--card-border); }
+    .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .book-title { margin-top: 15px; font-size: 0.9rem; color: #fff; font-weight: 600; font-style: italic; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; height: 70px; bottom: 0; top: auto; flex-direction: row; padding: 5px; }
+      .nav-brand { display: none; }
+      .main-content { margin-left: 0; padding: 20px 15px 100px; }
+      .nav-link { font-size: 0.6rem; padding: 10px; gap: 5px; text-align: center; }
+      .month-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="nav-brand" onclick="window.location.href='anos.html'" style="cursor:pointer;">Cosmic Bloom</div>
+    <a href="livros.html" class="nav-link"><i>📚</i> Livros</a>
+    <a href="desafios.html" class="nav-link"><i>🏆</i> Desafios</a>
+    <a href="calendario.html" class="nav-link"><i>📅</i> Agenda</a>
+    <a href="favoritos.html" class="nav-link active"><i>💜</i> Favoritos</a>
+    <a href="bingo.html" class="nav-link"><i>🎯</i> Bingo</a>
+    <a href="cores.html" class="nav-link"><i>🌈</i> Paleta</a>
+    <a href="A-z.html" class="nav-link"><i>🅰️</i> Desafio A-Z</a>
+    <a href="roleta.html" class="nav-link"><i>📍</i> Roleta</a>
+  </nav>
+
+  <main class="main-content">
+    <h1 class="header-title">Melhor do Mês</h1>
+    <p class="header-subtitle">Sua jornada literária em destaque</p>
+    <div class="month-grid" id="monthGrid"></div>
+  </main>
+
+  <script>
+    // --- LÓGICA DO INDEXEDDB (MANTIDA) ---
+    const dbName = "CosmicBloomFavoritos";
+    const storeName = "melhorDoMes";
+    let db;
+
+    const initDB = () => {
+      return new Promise((resolve) => {
+        const request = indexedDB.open(dbName, 1);
+        request.onupgradeneeded = (e) => { e.target.result.createObjectStore(storeName); };
+        request.onsuccess = (e) => { db = e.target.result; resolve(); };
+      });
+    };
+
+    const getEstadoFavoritos = () => {
+      return new Promise((resolve) => {
+        const transaction = db.transaction([storeName], "readonly");
+        const store = transaction.objectStore(storeName);
+        const request = store.getAllKeys();
+        request.onsuccess = async () => {
+          const keys = request.result;
+          const estado = {};
+          for (let key of keys) {
+            estado[key] = await new Promise(r => { const req = store.get(key); req.onsuccess = () => r(req.result); });
+          }
+          resolve(estado);
+        };
+      });
+    };
+
+    const salvarFavoritoDB = (month, data) => {
+      return new Promise((resolve) => {
+        const transaction = db.transaction([storeName], "readwrite");
+        transaction.objectStore(storeName).put(data, month);
+        transaction.oncomplete = () => resolve();
+      });
+    };
+
+    const removerFavoritoDB = (month) => {
+      return new Promise((resolve) => {
+        const transaction = db.transaction([storeName], "readwrite");
+        transaction.objectStore(storeName).delete(month);
+        transaction.oncomplete = () => resolve();
+      });
+    };
+
+    const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    let estadoMeses = {};
+    let clickTimer = null;
+
+    async function atualizarInterface() {
+      estadoMeses = await getEstadoFavoritos();
+      render();
+    }
+
+    function render() {
+      const grid = document.getElementById("monthGrid");
+      if(!grid) return;
+      grid.innerHTML = "";
+
+      months.forEach(month => {
+        const card = document.createElement("div");
+        card.className = "month-card";
+        const info = estadoMeses[month];
+        
+        card.innerHTML = `
+          <div class="month-name">${month}</div>
+          <div class="photo-frame">
+            ${info ? `<img src="${info.img}">` : '<span style="font-size:2rem; opacity:0.2;">✨</span>'}
+          </div>
+          <div class="book-title">${(info && info.title) ? info.title : ""}</div>
+        `;
+
+        card.onclick = () => {
+          if (clickTimer == null) {
+            clickTimer = setTimeout(() => { clickTimer = null; abrirCamera(month); }, 300);
+          } else {
+            clearTimeout(clickTimer); clickTimer = null;
+            if(confirm(`Deseja remover o destaque de ${month}?`)) { removerFavoritoDB(month).then(atualizarInterface); }
+          }
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function abrirCamera(month) {
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = "image/*";
+      input.onchange = () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const max_size = 600;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > max_size) { h *= max_size / w; w = max_size; } }
+            else { if (h > max_size) { w *= max_size / h; h = max_size; } }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const base64 = canvas.toDataURL('image/jpeg', 0.7);
+            const nomeLivro = prompt("Qual livro brilhou em " + month + "?");
+            salvarFavoritoDB(month, { img: base64, title: nomeLivro || "" }).then(atualizarInterface);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+
+    initDB().then(atualizarInterface);
+  </script>
+</body>
+</html>
