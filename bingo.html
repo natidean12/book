@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cosmic Bloom • Bingo ✨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-rose: #fcaec1;
+      --soft-pink: #fbc8d4;
+      --deep-rose: #d68a9c;
+      --bg-overlay: rgba(58, 29, 33, 0.75);
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(251, 200, 212, 0.3);
+      --text-light: #fff2f5;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0; font-family: 'Poppins', sans-serif; color: var(--text-light);
+      background: linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+                  url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
+      background-attachment: fixed; min-height: 100vh; display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar { width: 250px; background: rgba(58, 29, 33, 0.5); backdrop-filter: blur(20px); border-right: 1px solid var(--card-border); padding: 30px 20px; position: fixed; height: 100vh; z-index: 1000; }
+    .nav-brand { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; color: var(--primary-rose); font-size: 2.2rem; text-align: center; margin-bottom: 40px; }
+    .nav-link { color: var(--text-light); text-decoration: none; padding: 14px 18px; border-radius: 25px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; font-weight: 600; transition: 0.3s; }
+    .nav-link.active { background: var(--primary-rose); color: #3a1d21; }
+
+    /* MAIN */
+    .main-content { margin-left: 250px; padding: 40px; flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .header-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-style: italic; color: var(--primary-rose); margin-bottom: 30px; }
+
+    /* CONTROLS */
+    .bingo-controls { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid var(--card-border); padding: 20px; border-radius: 25px; display: flex; gap: 10px; width: 100%; max-width: 600px; margin-bottom: 30px; }
+    .bingo-controls input, .bingo-controls select { background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; color: white; flex: 1; }
+    .btn-create { background: var(--primary-rose); color: #3a1d21; border: none; padding: 0 25px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+
+    /* CARD */
+    .bingo-card { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid var(--card-border); padding: 25px; border-radius: 35px; width: 100%; max-width: 600px; margin-bottom: 30px; }
+    .bingo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .bingo-grid { display: grid; gap: 10px; margin-top: 15px; }
+    .bingo-cell { width: 100%; aspect-ratio: 1 / 1; background: rgba(255,255,255,0.05); border-radius: 15px; border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .bingo-cell.done { background: var(--primary-rose); color: #3a1d21; border: none; }
+    .bingo-cell textarea { width: 100%; height: 100%; background: transparent; border: none; text-align: center; color: white; font-size: 0.75rem; font-weight: 600; outline: none; padding: 8px; resize: none; }
+    .bingo-cell.done textarea { color: #3a1d21; }
+    
+    .reward-box { color: var(--primary-rose); font-weight: bold; font-size: 0.9rem; margin-top: 15px; text-align: center; padding: 10px; border-top: 1px solid var(--card-border); }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="nav-brand" onclick="window.location.href='anos.html'" style="cursor:pointer;">Cosmic Bloom</div>
+    <a href="livros.html" class="nav-link"><i>📚</i> Livros</a>
+    <a href="desafios.html" class="nav-link"><i>🏆</i> Desafios</a>
+    <a href="calendario.html" class="nav-link "><i>📅</i> Agenda</a>
+   <a href="favoritos.html" class="nav-link"><i>💜</i> <span>Favoritos</span></a>
+  <a href="bingo.html" class="nav-link active"><i>🎯</i> <span>Bingo</span></a>
+  <a href="cores.html" class="nav-link"><i>🌈</i> <span>Paleta</span></a>
+  <a href="A-z.html" class="nav-link"><i>🅰️</i> <span>Desafio A-Z</span></a>
+  <a href="roleta.html" class="nav-link"><i>📍</i> <span>Roleta</span></a>
+</nav>
+
+  <main class="main-content">
+    <h1 class="header-title">Bingo Literário</h1>
+    <div class="bingo-controls">
+      <input id="titleInput" placeholder="Nome do Bingo">
+      <select id="sizeSelect"><option value="3">3x3</option><option value="4">4x4</option><option value="5">5x5</option></select>
+      <button class="btn-create" onclick="addBingo()">Criar</button>
+    </div>
+    <div id="bingosContainer" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
+  </main>
+
+  <script>
+    const STORAGE = "cosmic_bingos_rosa";
+    let bingos = JSON.parse(localStorage.getItem(STORAGE)) || [];
+
+    function save() { localStorage.setItem(STORAGE, JSON.stringify(bingos)); }
+
+    function addBingo() {
+      const title = document.getElementById("titleInput").value || "Meu Bingo";
+      const size = parseInt(document.getElementById("sizeSelect").value);
+      bingos.push({ id: Date.now(), title, size, cells: Array.from({length: size * size}, () => ({text: "", done: false})) });
+      save(); render();
+    }
+
+    function calculateRewards(b) {
+      let lines = 0;
+      const s = b.size;
+      for(let i=0; i<s; i++) {
+        if(b.cells.slice(i*s, i*s+s).every(c => c.done)) lines++;
+        let col = []; for(let j=0; j<s; j++) col.push(b.cells[i + j*s]);
+        if(col.every(c => c.done)) lines++;
+      }
+      return Math.floor(lines / 3);
+    }
+
+    function toggleCell(bingoId, cellIdx) {
+      const bingo = bingos.find(b => b.id === bingoId);
+      bingo.cells[cellIdx].done = !bingo.cells[cellIdx].done;
+      save(); render();
+    }
+
+    function updateText(bingoId, cellIdx, text) {
+      const bingo = bingos.find(b => b.id === bingoId);
+      if(bingo) { bingo.cells[cellIdx].text = text; save(); }
+    }
+
+    function render() {
+      const container = document.getElementById("bingosContainer");
+      container.innerHTML = "";
+      bingos.forEach(b => {
+        const rewards = calculateRewards(b);
+        const card = document.createElement("div");
+        card.className = "bingo-card";
+        card.innerHTML = `
+          <div class="bingo-header"><h3>${b.title}</h3><button onclick="bingos = bingos.filter(x=>x.id!=${b.id}); save(); render();" style="background:none; border:none; color:var(--primary-rose); cursor:pointer;">Apagar</button></div>
+          <div class="bingo-grid" style="grid-template-columns: repeat(${b.size}, 1fr)">
+            ${b.cells.map((cell, i) => `
+              <div class="bingo-cell ${cell.done ? 'done' : ''}" ondblclick="toggleCell(${b.id}, ${i})">
+                <textarea oninput="updateText(${b.id}, ${i}, this.value)" placeholder="...">${cell.text}</textarea>
+              </div>
+            `).join('')}
+          </div>
+          <div class="reward-box">🏆 Medalhas: ${rewards}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
