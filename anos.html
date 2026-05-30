@@ -4,22 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link rel="apple-touch-icon" href="icons/capa-coquette.png">
- <meta name="apple-mobile-web-app-capable" content="yes">
- <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
- <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
   <title>Cosmic Book • Biblioteca ✨</title>
   
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght=0,700;1,700&display=swap" rel="stylesheet">
 
   <style>
     :root {
       --primary-rose: #fcaec1;
       --soft-pink: #fbc8d4;
       --vintage-gold: #cca05a;
-      --bg-overlay: rgba(64, 36, 41, 0.55); /* Filtro romântico meia força */
-      --card-bg: rgba(251, 200, 212, 0.22); /* Vidro fosco rosado super delicado */
-      --card-border: rgba(204, 160, 90, 0.35); /* Bordas em dourado vintage */
-      --text-dark-rose: #3a1d21; /* Tom marrom-rosado bem escuro para leitura */
+      --bg-overlay: rgba(58, 29, 33, 0.65); 
+      --card-bg: rgba(255, 255, 255, 0.08); 
+      --card-border: rgba(251, 200, 212, 0.2); 
+      --text-light: #fff2f5; 
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -27,77 +27,81 @@
     body {
       margin: 0; padding: 0;
       font-family: 'Poppins', sans-serif;
-      color: var(--text-dark-rose);
+      color: var(--text-light);
       min-height: 100vh;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       
-      /* A MESMA IMAGEM DE FUNDO OFICIAL */
       background: 
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
-        url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg");
-      background-size: cover; 
-      background-position: center;
+        url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
     }
 
-    .header-selecao { text-align: center; margin-bottom: 45px; }
+    .header-selecao { text-align: center; margin-bottom: 45px; padding: 0 20px; }
     
     .header-selecao h1 {
       font-family: 'Playfair Display', serif; 
       font-style: italic; 
       font-size: 2.8rem;
-      color: var(--text-dark-rose); 
+      color: var(--soft-pink); 
       margin: 0;
-      text-shadow: 0 2px 10px rgba(251, 200, 212, 0.4);
+      text-shadow: 0 2px 15px rgba(251, 200, 212, 0.3);
     }
     
     .header-selecao p { 
-      font-weight: 400; 
+      font-weight: 300; 
       opacity: 0.9; 
       margin-top: 8px; 
-      color: var(--vintage-gold);
+      color: var(--text-light);
       font-size: 1rem;
       letter-spacing: 0.5px;
     }
 
     .grid-anos {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 25px; width: 90%; max-width: 480px;
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px; 
+      width: 90%; 
+      max-width: 480px;
     }
 
     .card-ano {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      backdrop-filter: blur(15px); /* Desfoque de vidro da Apple */
-      -webkit-backdrop-filter: blur(15px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-radius: 24px; 
       padding: 35px 20px;
       text-align: center; 
       cursor: pointer;
-      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 8px 32px 0 rgba(64, 36, 41, 0.12);
+      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+      box-shadow: 0 8px 32px 0 rgba(58, 29, 33, 0.3);
     }
 
     .card-ano:active, .card-ano:hover {
       transform: scale(1.04);
-      border-color: var(--vintage-gold);
-      background: rgba(251, 200, 212, 0.35); 
-      box-shadow: 0 0 25px rgba(252, 174, 193, 0.4);
+      border-color: var(--soft-pink);
+      background: rgba(251, 200, 212, 0.15); 
+      box-shadow: 0 0 25px rgba(252, 174, 193, 0.3);
     }
 
     .card-ano h2 { 
       font-size: 2.4rem; 
       margin: 0; 
-      color: var(--text-dark-rose);
+      color: #ffffff;
       font-weight: 700;
     }
     
     .card-ano p { 
       font-size: 0.85rem; 
-      color: var(--vintage-gold); 
+      color: var(--soft-pink); 
       font-weight: 600;
       margin: 8px 0 0 0; 
       text-transform: uppercase; 
       letter-spacing: 1.5px; 
+    }
+
+    .card-ano.atual p {
+      color: var(--vintage-gold);
     }
   </style>
 </head>
@@ -108,23 +112,54 @@
     <p>Seu espaço sagrado para registrar cada história</p>
   </div>
 
-  <div class="grid-anos">
-    <div class="card-ano" onclick="selecionarAno(2025)">
-      <h2>2025</h2>
-      <p>Histórico 📜</p>
-    </div>
-
-    <div class="card-ano" onclick="selecionarAno(2026)">
-      <h2>2026</h2>
-      <p>Atual 🌸</p>
-    </div>
-  </div>
+  <div class="grid-anos" id="gridAnos"></div>
 
   <script>
-    function selecionarAno(ano) {
-      sessionStorage.setItem("ano_selecionado", ano);
-      window.location.href = "dashboard.html";
+    const anoAtual = new Date().getFullYear(); // Detecta dinamicamente o ano (2026)
+
+    function carregarAnos() {
+      const grid = document.getElementById("gridAnos");
+      grid.innerHTML = ""; 
+
+      // Puxa a sua lista local de livros salvos no iPad (ajuste o nome 'books' se no seu script principal usar outra chave)
+      const livrosLocais = JSON.parse(localStorage.getItem("books")) || [];
+
+      // Extrai os anos dos livros cadastrados sem repetir nenhum
+      let listaAnos = livrosLocais.map(livro => parseInt(livro.year)).filter(Boolean);
+      listaAnos = [...new Set(listaAnos)];
+
+      // Garante que o ano de 2025 (seu histórico) e o ano atual (2026) sempre comecem na tela
+      if (!listaAnos.includes(2025)) listaAnos.push(2025);
+      if (!listaAnos.includes(anoAtual)) listaAnos.push(anoAtual);
+
+      // Coloca os anos em ordem decrescente (mais recente primeiro)
+      listaAnos.sort((a, b) => b - a);
+
+      // Desenha os cards na tela de forma automática
+      listaAnos.forEach(ano => {
+        const card = document.createElement("div");
+        
+        if (ano === anoAtual) {
+          card.className = "card-ano atual";
+          card.innerHTML = `<h2>${ano}</h2><p>Atual 🌸</p>`;
+        } else {
+          card.className = "card-ano";
+          card.innerHTML = `<h2>${ano}</h2><p>Histórico 📜</p>`;
+        }
+
+        card.onclick = () => selecionarAno(ano);
+        grid.appendChild(card);
+      });
     }
+
+    function selecionarAno(ano) {
+      // Salva o ano clicado para sua tela principal filtrar os livros certos
+      sessionStorage.setItem("ano_selecionado", ano);
+      window.location.href = "livros.html"; 
+    }
+
+    // Carrega a lista ao abrir a tela
+    window.addEventListener("DOMContentLoaded", carregarAnos);
   </script>
 </body>
 </html>
