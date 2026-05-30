@@ -365,6 +365,7 @@
   const storeName = "livros";
   let db, books = [], selectedStars = 0, selectedImage = "", pdfDataUrl = "", editId = null;
 
+  // Inicialização do Banco
   const initDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, 1);
     request.onupgradeneeded = (e) => {
@@ -392,7 +393,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById("modal");
 
-    // Configura Botão Adicionar
+    // Botão Adicionar
     document.getElementById("addBtn").addEventListener("click", () => {
       editId = null; selectedStars = 0; selectedImage = ""; pdfDataUrl = "";
       document.getElementById("inputTitle").value = "";
@@ -402,7 +403,7 @@
       modal.classList.add("show");
     });
 
-    // Configura Botão Salvar
+    // Botão Salvar (AQUI ESTÁ A CORREÇÃO)
     document.getElementById("saveBook").addEventListener("click", async () => {
       const bookData = {
         id: editId || crypto.randomUUID(),
@@ -418,12 +419,12 @@
 
       await saveBookDB(bookData);
       modal.classList.remove("show");
-      atualizarInterface();
+      location.reload(); // Recarrega a página para atualizar a lista
     });
 
     document.getElementById("closeModal").addEventListener("click", () => modal.classList.remove("show"));
 
-    // Configura Estrelas
+    // Estrelas
     document.querySelectorAll("#starsSelect span").forEach((s, i) => {
       s.onclick = () => {
         let val = i + 1;
@@ -437,7 +438,7 @@
 
   async function atualizarInterface() {
     books = await getAllBooks();
-    renderBooks();
+    if (typeof renderBooks === 'function') renderBooks();
   }
 
   function atualizarEstrelasVisual() {
