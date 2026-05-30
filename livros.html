@@ -359,182 +359,131 @@
   </div>
 
   <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    const dbName = "CosmicBloomDB";
-    const storeName = "livros";
-    let db;
+  const dbName = "CosmicBloomDB";
+  const storeName = "livros";
+  let db, books = [], selectedStars = 0, selectedImage = "", pdfDataUrl = "", editId = null;
 
-    // Inicialização segura
-    const initDB = () => {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbName, 1);
-        request.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(storeName)) {
-            db.createObjectStore(storeName, { keyPath: "id" });
-          }
-        };
-        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
-        request.onerror = (e) => reject("Erro ao abrir banco");
-      });
+  const initDB = () => new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName, { keyPath: "id" });
     };
+    request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    request.onerror = (e) => reject("Erro ao abrir banco");
+  });
 
-    // --- FUNÇÕES DE BANCO DE DADOS (Mantidas) ---
-    const getAllBooks = () => new Promise((resolve) => {
-      const transaction = db.transaction([storeName], "readonly");
-      const store = transaction.objectStore(storeName);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result || []);
-    });
+  const getAllBooks = () => new Promise((resolve) => {
+    const transaction = db.transaction([storeName], "readonly");
+    const store = transaction.objectStore(storeName);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result || []);
+  });
 
-    const saveBookDB = (book) => new Promise((resolve) => {
-      const transaction = db.transaction([storeName], "readwrite");
-      const store = transaction.objectStore(storeName);
-      store.put(book);
-      transaction.oncomplete = () => resolve();
-    });
+  const saveBookDB = (book) => new Promise((resolve) => {
+    const transaction = db.transaction([storeName], "readwrite");
+    const store = transaction.objectStore(storeName);
+    store.put(book);
+    transaction.oncomplete = () => resolve();
+  });
 
-    const deleteBookDB = (id) => new Promise((resolve) => {
-      const transaction = db.transaction([storeName], "readwrite");
-      const store = transaction.objectStore(storeName);
-      store.delete(id);
-      transaction.oncomplete = () => resolve();
-    });
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById("modal");
 
-    // --- VARIÁVEIS GLOBAIS ---
-    let books = [];
-    let selectedStars = 0;
-    let selectedImage = "";
-    let pdfDataUrl = ""; 
-    let editId = null;
-
-    // --- LÓGICA DE INTERFACE ---
-    document.addEventListener('DOMContentLoaded', () => {
-      
-      // 1. Botão Adicionar (Corrigido para garantir o clique)
-      const addBtn = document.getElementById("addBtn");
-      const modal = document.getElementById("modal");
-      const closeModal = document.getElementById("closeModal");
-
-      addBtn.addEventListener("click", () => {
-        editId = null; 
-        selectedStars = 0; 
-        selectedImage = ""; 
-        pdfDataUrl = "";
-        document.getElementById("inputTitle").value = "";
-        document.getElementById("inputPages").value = "";
-        document.getElementById("inputYear").value = sessionStorage.getItem("ano_selecionado") || "2026";
-        atualizarEstrelasVisual();
-        modal.classList.add("show");
-      });
-
-      closeModal.addEventListener("click", () => {
-        modal.classList.remove("show");
-      });
-
-      // Inicia DB
-      initDB().then(() => atualizarInterface());
-    });
-
-    async function atualizarInterface() {
-      books = await getAllBooks();
-      renderBooks();
-    }
-
-    // --- CORREÇÃO DO LEITOR PDF (Substitua a sua função antiga por esta) ---
-    async function abrirLeitorPDF(titulo, id) {
-      document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
-      const area = document.getElementById("pdfRenderArea");
-      area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Carregando...</p>";
-      document.getElementById("pdfViewer").classList.add("show");
-
-      const livro = books.find(b => b.id === id);
-      if (!livro || !livro.pdf) return;
-
-      try {
-        const base64 = livro.pdf.split(',')[1];
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-
-        const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
-        area.innerHTML = "";
-
-        for (let num = 1; num <= pdf.numPages; num++) {
-          const page = await pdf.getPage(num);
-          const viewport = page.getViewport({ scale: 1.3 });
-          const canvas = document.createElement('canvas');
-          canvas.className = "pdf-page-canvas";
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          area.appendChild(canvas);
-          await page.render({ canvasContext: context, viewport: viewport }).promise;
-        }
-      } catch (err) {
-        area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro no PDF.</p>";
-      }
-    }
-
-    function fecharLeitorPDF() {
-      document.getElementById("pdfViewer").classList.remove("show");
-      document.getElementById("pdfRenderArea").innerHTML = "";
-    }
-
-    document.querySelectorAll("#starsSelect span").forEach((s, i) => {
-      s.onclick = () => {
-        let val = i + 1;
-        if (selectedStars === val) selectedStars = val - 0.5;
-        else if (selectedStars === (val - 0.5)) selectedStars = 0;
-        else selectedStars = val;
-        atualizarEstrelasVisual();
-      };
-    });
-
-    function atualizarEstrelasVisual() {
-      document.querySelectorAll("#starsSelect span").forEach((s, i) => {
-        let val = i + 1;
-        s.classList.remove("selected", "half-selected");
-        if (val <= Math.floor(selectedStars)) s.classList.add("selected");
-        else if (val === Math.ceil(selectedStars) && selectedStars % 1 !== 0) s.classList.add("half-selected");
-      });
-    }
-
-    document.getElementById("addBtn").onclick = () => {
+    // Configura Botão Adicionar
+    document.getElementById("addBtn").addEventListener("click", () => {
       editId = null; selectedStars = 0; selectedImage = ""; pdfDataUrl = "";
       document.getElementById("inputTitle").value = "";
       document.getElementById("inputPages").value = "";
       document.getElementById("inputYear").value = sessionStorage.getItem("ano_selecionado") || "2026";
       atualizarEstrelasVisual();
-      document.getElementById("modal").classList.add("show");
-    };
+      modal.classList.add("show");
+    });
 
-    document.getElementById("closeModal").onclick = () => document.getElementById("modal").classList.remove("show");
-
-    document.getElementById("saveBook").onclick = async () => {
-      const activeYear = parseInt(document.getElementById("inputYear").value) || 2026;
-      
+    // Configura Botão Salvar
+    document.getElementById("saveBook").addEventListener("click", async () => {
       const bookData = {
         id: editId || crypto.randomUUID(),
         title: document.getElementById("inputTitle").value || "Sem Título",
         pages: parseInt(document.getElementById("inputPages").value) || 0,
-        year: activeYear,
+        year: parseInt(document.getElementById("inputYear").value) || 2026,
         status: document.getElementById("statusSelect").value,
         estrelas: selectedStars,
-        favorito: editId ? books.find(b => b.id === editId).favorito : false,
+        favorito: editId ? (books.find(b => b.id === editId)?.favorito || false) : false,
         capa: selectedImage || "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg",
         pdf: pdfDataUrl 
       };
 
       await saveBookDB(bookData);
-      document.getElementById("modal").classList.remove("show");
-      atualizarInterface();
-    };
-
-    initDB().then(() => {
+      modal.classList.remove("show");
       atualizarInterface();
     });
-  </script>
+
+    document.getElementById("closeModal").addEventListener("click", () => modal.classList.remove("show"));
+
+    // Configura Estrelas
+    document.querySelectorAll("#starsSelect span").forEach((s, i) => {
+      s.onclick = () => {
+        let val = i + 1;
+        selectedStars = (selectedStars === val) ? val - 0.5 : ((selectedStars === val - 0.5) ? 0 : val);
+        atualizarEstrelasVisual();
+      };
+    });
+
+    initDB().then(() => atualizarInterface());
+  });
+
+  async function atualizarInterface() {
+    books = await getAllBooks();
+    renderBooks();
+  }
+
+  function atualizarEstrelasVisual() {
+    document.querySelectorAll("#starsSelect span").forEach((s, i) => {
+      let val = i + 1;
+      s.classList.remove("selected", "half-selected");
+      if (val <= Math.floor(selectedStars)) s.classList.add("selected");
+      else if (val === Math.ceil(selectedStars) && selectedStars % 1 !== 0) s.classList.add("half-selected");
+    });
+  }
+
+  async function abrirLeitorPDF(titulo, id) {
+    document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
+    const area = document.getElementById("pdfRenderArea");
+    area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Carregando...</p>";
+    document.getElementById("pdfViewer").classList.add("show");
+
+    const livro = books.find(b => b.id === id);
+    if (!livro || !livro.pdf) return;
+
+    try {
+      const base64 = livro.pdf.split(',')[1];
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+      area.innerHTML = "";
+      for (let num = 1; num <= pdf.numPages; num++) {
+        const page = await pdf.getPage(num);
+        const viewport = page.getViewport({ scale: 1.3 });
+        const canvas = document.createElement('canvas');
+        canvas.className = "pdf-page-canvas";
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        area.appendChild(canvas);
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+      }
+    } catch (err) { area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro.</p>"; }
+  }
+
+  function fecharLeitorPDF() {
+    document.getElementById("pdfViewer").classList.remove("show");
+    document.getElementById("pdfRenderArea").innerHTML = "";
+  }
+</script>
 </body>
 </html>
