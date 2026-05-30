@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cosmic Bloom • A-Z ✨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-rose: #fcaec1;
+      --soft-pink: #fbc8d4;
+      --bg-overlay: rgba(58, 29, 33, 0.75);
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(251, 200, 212, 0.2);
+      --text-light: #fff2f5;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0; font-family: 'Poppins', sans-serif; color: var(--text-light);
+      background: linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+                  url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
+      background-attachment: fixed; min-height: 100vh; display: flex;
+      overflow: hidden; /* Trava o scroll global */
+    }
+
+    .sidebar { width: 250px; background: rgba(58, 29, 33, 0.4); backdrop-filter: blur(20px); border-right: 1px solid var(--card-border); padding: 30px 20px; position: fixed; height: 100vh; z-index: 1000; }
+    .nav-brand { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; color: var(--primary-rose); font-size: 2.2rem; text-align: center; margin-bottom: 40px; }
+    .nav-link { color: var(--text-light); text-decoration: none; padding: 14px 18px; border-radius: 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; font-weight: 600; transition: 0.3s; }
+    .nav-link.active { background: var(--primary-rose); color: #3a1d21; }
+
+    /* ÁREA DE CONTEÚDO COM SCROLL PRÓPRIO */
+    .main-content { 
+      margin-left: 250px; padding: 40px; flex: 1; display: flex; flex-direction: column; align-items: center;
+      height: 100vh; overflow-y: auto; 
+    }
+
+    .header-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-style: italic; color: var(--primary-rose); margin-bottom: 20px; }
+
+    .progress-wrapper { width: 100%; max-width: 800px; margin-bottom: 30px; text-align: center; }
+    .az-progress-container { width: 100%; height: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; margin-top: 10px; border: 1px solid var(--card-border); }
+    .progress-fill { height: 100%; background: var(--primary-rose); width: 0%; transition: 0.6s ease; }
+
+    /* GRID FIXA E FLUIDA */
+    .alphabet-grid { 
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; width: 100%; max-width: 800px; padding-bottom: 100px;
+    }
+
+    .letter-card { aspect-ratio: 1 / 1.4; background: var(--card-bg); border-radius: 15px; border: 1px solid var(--card-border); position: relative; overflow: hidden; transition: 0.3s; cursor: pointer; }
+    .letter-card.completed { border-color: var(--primary-rose); }
+
+    .letter-badge { position: absolute; top: 8px; left: 8px; z-index: 5; background: var(--primary-rose); color: #3a1d21; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; }
+    .photo-area { height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); }
+    .photo-area img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-area span { opacity: 0.3; font-size: 1.5rem; }
+
+    .vitrine-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .vitrine-overlay.active { display: flex; }
+    .vitrine-content { max-height: 85vh; border-radius: 15px; border: 2px solid var(--primary-rose); }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; height: 70px; bottom: 0; top: auto; flex-direction: row; padding: 5px; }
+      .nav-brand { display: none; }
+      .main-content { margin-left: 0; padding: 20px 15px 100px; }
+      .alphabet-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="nav-brand" onclick="window.location.href='anos.html'" style="cursor:pointer;">Cosmic Bloom</div>
+    <a href="livros.html" class="nav-link"><i>📚</i> Livros</a>
+    <a href="desafios.html" class="nav-link"><i>🏆</i> Desafios</a>
+    <a href="calendario.html" class="nav-link "><i>📅</i> Agenda</a>
+   <a href="favoritos.html" class="nav-link"><i>💜</i> <span>Favoritos</span></a>
+  <a href="bingo.html" class="nav-link "><i>🎯</i> <span>Bingo</span></a>
+  <a href="cores.html" class="nav-link "><i>🌈</i> <span>Paleta</span></a>
+  <a href="A-z.html" class="nav-link active"><i>🅰️</i> <span>Desafio A-Z</span></a>
+  <a href="roleta.html" class="nav-link"><i>📍</i> <span>Roleta</span></a>
+</nav>
+
+
+  <main class="main-content">
+    <h1 class="header-title">Desafio A-Z</h1>
+    <div class="progress-wrapper">
+      <span id="counterLabel" style="font-weight: 600; color: var(--primary-rose);">0 de 26 completadas</span>
+      <div class="az-progress-container"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="alphabet-grid" id="alphabetGrid"></div>
+  </main>
+
+  <div class="vitrine-overlay" id="vitrine" onclick="this.classList.remove('active')">
+    <img src="" class="vitrine-content" id="vitrineImg">
+  </div>
+
+  <script>
+    // [Lógica JS permanece a mesma, apenas certifique-se de que o ID esteja correto no seu sistema]
+    const dbName = "CosmicBloomAZ", storeName = "fotosAZ";
+    let db, estadoAZ = {};
+
+    const initDB = () => new Promise(res => {
+      const req = indexedDB.open(dbName, 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore(storeName);
+      req.onsuccess = e => { db = e.target.result; res(); };
+    });
+
+    const getEstadoAZ = () => new Promise(res => {
+      const store = db.transaction(storeName, "readonly").objectStore(storeName);
+      store.getAllKeys().onsuccess = async e => {
+        const estado = {};
+        for(let key of e.target.result) {
+          estado[key] = await new Promise(r => store.get(key).onsuccess = ev => r(ev.target.result));
+        }
+        res(estado);
+      };
+    });
+
+    async function atualizarInterface() { estadoAZ = await getEstadoAZ(); render(); }
+
+    function render() {
+      const grid = document.getElementById("alphabetGrid");
+      grid.innerHTML = "";
+      const letters = Array.from({length:26}, (_,i)=>String.fromCharCode(65+i));
+      const total = Object.keys(estadoAZ).length;
+      document.getElementById("progressFill").style.width = (total/26)*100 + "%";
+      document.getElementById("counterLabel").innerText = `${total} de 26 letras concluídas`;
+
+      letters.forEach(letter => {
+        const foto = estadoAZ[letter];
+        const card = document.createElement("div");
+        card.className = `letter-card ${foto ? 'completed' : ''}`;
+        card.innerHTML = `<div class="letter-badge">${letter}</div><div class="photo-area">${foto ? `<img src="${foto}">` : `<span>📖</span>`}</div>`;
+        card.onclick = () => {
+          if (foto) { document.getElementById("vitrineImg").src = foto; document.getElementById("vitrine").classList.add("active"); }
+          else {
+            const input = document.createElement("input");
+            input.type = "file"; input.onchange = e => {
+              const reader = new FileReader();
+              reader.onload = ev => {
+                const tx = db.transaction(storeName, "readwrite");
+                tx.objectStore(storeName).put(ev.target.result, letter);
+                tx.oncomplete = atualizarInterface;
+              };
+              reader.readAsDataURL(e.target.files[0]);
+            };
+            input.click();
+          }
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    initDB().then(atualizarInterface);
+  </script>
+</body>
+</html>
