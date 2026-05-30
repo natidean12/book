@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Cosmic Bloom Library ✨</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght=0,700;1,700&display=swap" rel="stylesheet">
   <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
   <link rel="apple-touch-icon" href="icone.png">
   <link rel="manifest" href="manifest.json">
@@ -83,12 +83,24 @@
     
     .top-bar {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: center;
       padding-bottom: 30px;
       position: sticky;
       top: 0;
       z-index: 900;
+    }
+
+    .back-years-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--card-border);
+      color: var(--text-light);
+      padding: 10px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     
     .pages-badge {
@@ -257,14 +269,16 @@
     #saveBook { background: linear-gradient(135deg, var(--soft-pink), var(--primary-rose)); color: #3a1d21; }
     #closeModal { background: rgba(255,255,255,0.1); color: #fff; }
 
+    /* Estilo do Leitor Otimizado para Gestos no iPad */
     .pdf-viewer {
-      position: fixed; inset: 0; background: #000; z-index: 3000;
+      position: fixed; inset: 0; background: #1c0e10; z-index: 3000;
       display: none; flex-direction: column;
     }
     .pdf-viewer.show { display: flex; }
-    .pdf-header { background: #1c0e10; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-    .pdf-header button { background: var(--primary-rose); color: #3a1d21; border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold; }
-    .pdf-frame { flex: 1; width: 100%; border: none; }
+    .pdf-header { background: #12090a; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); }
+    .pdf-header button { background: linear-gradient(135deg, var(--soft-pink), var(--primary-rose)); color: #3a1d21; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; }
+    .pdf-container-scroller { flex: 1; width: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .pdf-page-canvas { max-width: 95%; width: 750px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: white; border-radius: 4px; }
 
     @media (max-width: 768px) {
       .sidebar { width: 100%; height: 70px; bottom: 0; top: auto; flex-direction: row; padding: 0; justify-content: space-around; }
@@ -281,7 +295,7 @@
 <body>
 
   <nav class="sidebar">
-    <div class="nav-brand">Cosmic Bloom</div>
+    <div class="nav-brand" onclick="window.location.href='anos.html'" style="cursor:pointer;">Cosmic Bloom</div>
     <a href="livros.html" class="nav-link active"><i>📚</i> <span>Livros</span></a>
     <a href="challenge.html" class="nav-link"><i>🏆</i> <span>Desafios</span></a>
     <a href="calendario.html" class="nav-link"><i>📅</i> <span>Agenda</span></a>
@@ -294,6 +308,7 @@
 
   <main class="main-content">
     <div class="top-bar">
+      <button class="back-years-btn" onclick="window.location.href='anos.html'">← Voltar aos Anos</button>
       <div class="pages-badge">✨ <span id="totalPgs">0</span> pgs lidas</div>
     </div>
 
@@ -332,14 +347,13 @@
 
   <div class="pdf-viewer" id="pdfViewer">
     <div class="pdf-header">
-      <h3 id="pdfViewerTitle" style="margin:0; color:#fff; font-size:1.1rem;">Lendo PDF</h3>
+      <h3 id="pdfViewerTitle" style="margin:0; color:#fff; font-size:1.1rem;">Lendo Livro</h3>
       <button onclick="fecharLeitorPDF()">Fechar Leitura</button>
     </div>
-    <iframe class="pdf-frame" id="pdfFrame"></iframe>
+    <div class="pdf-container-scroller" id="pdfRenderArea"></div>
   </div>
 
   <script>
-    // Configuração do leitor interno do Google PDFJS
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
     const dbName = "CosmicBloomDB";
@@ -434,7 +448,6 @@
       
       years.forEach(year => {
         const section = document.createElement("div");
-        section.sectionId = `sec-${year}`;
         section.innerHTML = `<h2 class="year-header">${year}</h2><div class="books-grid" id="grid-${year}"></div>`;
         container.appendChild(section);
         
@@ -444,7 +457,7 @@
           const card = document.createElement("div");
           card.className = "book-card";
           
-          let pdfButtonHtml = book.pdf ? `<button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.pdf}')">📖 Ler PDF</button>` : '';
+          let pdfButtonHtml = book.pdf ? `<button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.id}')">📖 Ler Livro</button>` : '';
           
           card.innerHTML = `
             <img src="${book.capa || 'https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg'}" loading="lazy">
@@ -496,31 +509,42 @@
       });
     }
 
-    // Leitor de arquivos inteligente (Imagens normais ou PDFs Inteligentes)
+    // Processamento de Imagens e Extração de Capa de PDF otimizados para iPad
     document.getElementById("bookFile").onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
 
+      const reader = new FileReader();
+      
       if (file.type === "application/pdf") {
-        const reader = new FileReader();
         reader.onload = async (event) => {
           pdfDataUrl = event.target.result;
+          // Padrão provisório caso dê algum erro na leitura da folha 1
           selectedImage = "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg"; 
 
-          // MÁGICA: Abre o arquivo em segundo plano e descobre as páginas sozinho!
           try {
-            const typedarray = new Uint8Array(event.target.result.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
-            const pdf = await pdfjsLib.getDocument({data: typedarray}).promise;
+            const pdfData = new Uint8Array(event.target.result.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
+            const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
             
-            // Coloca o número exato de páginas lidas direto no input!
+            // 1. Grava a quantidade de páginas lidas no input
             document.getElementById("inputPages").value = pdf.numPages;
+
+            // 2. Extrai a primeira folha para gerar a capa do card automaticamente
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 0.5 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            selectedImage = canvas.toDataURL('image/jpeg', 0.6);
           } catch(err) {
-            console.log("Não foi possível contar as páginas automaticamente:", err);
+            console.log("Processamento interno de PDF:", err);
           }
         };
         reader.readAsDataURL(file);
       } else {
-        const reader = new FileReader();
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
@@ -544,15 +568,42 @@
       }
     };
 
-    function abrirLeitorPDF(titulo, url) {
+    // Renderizador Nativo de Páginas de PDF (Garante rolagem e toque no iPad)
+    async function abrirLeitorPDF(titulo, id) {
       document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
-      document.getElementById("pdfFrame").src = url;
+      const area = document.getElementById("pdfRenderArea");
+      area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Abrindo portal literário...</p>";
       document.getElementById("pdfViewer").classList.add("show");
+
+      const livro = books.find(b => b.id === id);
+      if (!livro || !livro.pdf) return;
+
+      try {
+        const pdfData = new Uint8Array(livro.pdf.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
+        const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
+        area.innerHTML = ""; // Limpa o carregando
+
+        // Carrega todas as páginas em sequência vertical com rolagem touch perfeita
+        for (let num = 1; num <= pdf.numPages; num++) {
+          const page = await pdf.getPage(num);
+          const viewport = page.getViewport({ scale: 1.3 }); // Zoom confortável para leitura no iPad
+          const canvas = document.createElement('canvas');
+          canvas.className = "pdf-page-canvas";
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          area.appendChild(canvas);
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+        }
+      } catch (err) {
+        area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro ao abrir as páginas deste PDF.</p>";
+      }
     }
 
     function fecharLeitorPDF() {
       document.getElementById("pdfViewer").classList.remove("show");
-      document.getElementById("pdfFrame").src = "";
+      document.getElementById("pdfRenderArea").innerHTML = "";
     }
 
     document.querySelectorAll("#starsSelect span").forEach((s, i) => {
