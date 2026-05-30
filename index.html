@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<link rel="apple-touch-icon" href="icons/capa-coquette.png">
+  <link rel="apple-touch-icon" href="icons/capa-coquette.png">
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
   <title>Cosmic Book ✨</title>
   
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:ital,wght=1,700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --primary-rose: #fcaec1;      /* Rosa vivo das pétalas */
-      --soft-pink: #fbc8d4;         /* Rosa pastel suave dos livros */
-      --vintage-gold: #cca05a;      /* Dourado elegante */
-      --bg-overlay: rgba(64, 36, 41, 0.6); /* Filtro meia força aconchegante */
+      --primary-rose: #fcaec1;      
+      --soft-pink: #fbc8d4;         
+      --vintage-gold: #cca05a;      
+      --bg-overlay: rgba(64, 36, 41, 0.6); 
       --text-light: #fff2f5;        
     }
 
@@ -26,7 +26,9 @@
     body {
       margin: 0; padding: 0;
       font-family: 'Poppins', sans-serif;
-      overflow: hidden; height: 100vh;
+      overflow: hidden; 
+      height: 100vh;
+      background-color: #3a1d21; /* Cor de fundo alternativa enquanto a imagem do Pinterest carrega no iPad */
       
       /* IMAGEM DE FUNDO NA TELA INTEIRA */
       background: 
@@ -40,9 +42,10 @@
       position: fixed; inset: 0;
       display: flex; justify-content: center; align-items: center; text-align: center;
       z-index: 9999;
-      background: transparent; /* Deixa o fundo do body aparecer */
-      backdrop-filter: blur(5px); /* Efeito fosco na imagem */
+      background: transparent; 
+      backdrop-filter: blur(5px); 
       -webkit-backdrop-filter: blur(5px);
+      transition: opacity 0.8s ease, visibility 0.8s ease;
     }
 
     .brand-title {
@@ -61,6 +64,7 @@
       font-weight: 300;
       margin: 0;
       font-style: italic;
+      padding: 0 20px;
     }
 
     .loader {
@@ -74,7 +78,6 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition: opacity 1s ease, visibility 1s ease;
     }
 
     @keyframes pulsar {
@@ -93,10 +96,6 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
-
   <script>
     const frases = [
       "“Um leitor vive mil vidas.”",
@@ -105,16 +104,23 @@
       "“Ler é um ato de cuidado.”"
     ];
 
-    window.addEventListener("DOMContentLoaded", () => {
-      const fraseEl = document.getElementById("frase-efeito");
-      const indiceAleatorio = Math.floor(Math.random() * frases.length);
-      fraseEl.textContent = frases[indiceAleatorio];
+    // Sorteia a frase imediatamente para não dar delay visual
+    const fraseEl = document.getElementById("frase-efeito");
+    const indiceAleatorio = Math.floor(Math.random() * frases.length);
+    fraseEl.textContent = frases[indiceAleatorio];
 
+    // O iPad prefere que esperemos o carregamento completo (window.load) 
+    // antes de forçar a troca de página para evitar telas brancas
+    window.addEventListener("load", () => {
       setTimeout(() => {
         const splash = document.getElementById("splash-screen");
-        splash.classList.add("hidden");
-        window.location.href = "anos.html"; 
-      }, 3000); 
+        if(splash) {
+          splash.classList.add("hidden");
+        }
+        
+        // Forma de redirecionamento muito mais amigável com a segurança do ecossistema Apple
+        window.location.replace("anos.html"); 
+      }, 2500); 
     });
   </script>
 </body>
