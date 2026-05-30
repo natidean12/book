@@ -2,125 +2,132 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Cosmic Bloom Library ✨</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
   <style>
-    /* Estilos mantidos para manter a estética Coquette */
-    :root { --soft-pink: #fbc8d4; --primary-rose: #fcaec1; --vintage-gold: #cca05a; --card-bg: rgba(255, 255, 255, 0.08); }
-    body { margin: 0; font-family: 'Poppins', sans-serif; background: #2a1a1d; color: #fff; min-height: 100vh; display: flex; }
-    .sidebar { width: 250px; background: rgba(0,0,0,0.2); padding: 20px; position: fixed; height: 100vh; }
+    :root { --soft-pink: #fbc8d4; --primary-rose: #fcaec1; --vintage-gold: #cca05a; --bg-overlay: rgba(58, 29, 33, 0.65); --card-bg: rgba(255, 255, 255, 0.08); }
+    body { margin: 0; font-family: 'Poppins', sans-serif; color: #fff; background: #2a1a1d; min-height: 100vh; display: flex; }
+    .sidebar { width: 250px; background: rgba(0,0,0,0.2); padding: 30px; position: fixed; height: 100vh; }
     .main-content { margin-left: 250px; padding: 40px; flex: 1; }
-    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; }
-    .book-card { background: var(--card-bg); padding: 15px; border-radius: 20px; text-align: center; }
-    .book-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; }
+    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 30px; }
+    .book-card { background: var(--card-bg); padding: 15px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+    .book-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
     .pdf-viewer { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
     .pdf-viewer.show { display: flex; }
-    .pdf-frame { flex: 1; width: 100%; border: none; }
-    .header-bar { display: flex; justify-content: space-between; margin-bottom: 30px; }
-    button { cursor: pointer; padding: 10px 20px; border-radius: 10px; border: none; background: var(--soft-pink); }
+    .pdf-header { padding: 20px; display: flex; justify-content: space-between; background: #111; }
+    .pdf-scroller { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; }
+    .pdf-page { background: white; max-width: 95%; width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    button { cursor: pointer; padding: 10px 20px; border-radius: 10px; border: none; background: var(--soft-pink); font-weight: bold; }
+    @media (max-width: 768px) { .sidebar { width: 100%; height: 70px; bottom: 0; top: auto; flex-direction: row; } .main-content { margin-left: 0; padding-bottom: 100px; } }
   </style>
 </head>
 <body>
 
   <nav class="sidebar">
     <h2>Cosmic Bloom</h2>
-    <a href="anos.html">Voltar aos Anos</a>
+    <a href="anos.html" style="color:white; text-decoration:none;">← Voltar</a>
   </nav>
 
   <main class="main-content">
-    <div class="header-bar">
-      <h1>Livros - <span id="anoDisplay"></span></h1>
-      <button onclick="document.getElementById('modal').style.display='flex'">+ Novo Livro</button>
+    <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+      <h1>Livros: <span id="anoAtual"></span></h1>
+      <button onclick="document.getElementById('modal').style.display='flex'">+ Adicionar</button>
     </div>
     <div class="books-grid" id="booksGrid"></div>
   </main>
 
-  <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
-    <div style="background:#333; padding:20px; border-radius:20px;">
+  <div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:5000; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:30px; border-radius:20px; width:90%; max-width:400px;">
       <input type="file" id="bookFile" accept="application/pdf,image/*">
-      <input type="text" id="inputTitle" placeholder="Título">
+      <input type="text" id="inputTitle" placeholder="Título" style="width:100%; margin:10px 0; padding:10px;">
+      <input type="number" id="inputPages" placeholder="Páginas" style="width:100%; margin:10px 0; padding:10px;">
       <button id="saveBtn">Salvar</button>
       <button onclick="document.getElementById('modal').style.display='none'">Fechar</button>
     </div>
   </div>
 
   <div class="pdf-viewer" id="pdfViewer">
-    <div style="padding:10px;"><button onclick="fecharPDF()">Fechar Leitura</button></div>
-    <iframe class="pdf-frame" id="pdfFrame"></iframe>
+    <div class="pdf-header">
+      <h3 id="pdfTitle">Lendo...</h3>
+      <button onclick="fecharPDF()">Fechar</button>
+    </div>
+    <div class="pdf-scroller" id="pdfScroller"></div>
   </div>
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-    let db;
-    const anoSelecionado = sessionStorage.getItem("ano_selecionado") || "2026";
-    document.getElementById("anoDisplay").innerText = anoSelecionado;
+    const ano = sessionStorage.getItem("ano_selecionado") || "2026";
+    document.getElementById("anoAtual").innerText = ano;
 
-    // Conexão com Banco de Dados
+    let db;
     const request = indexedDB.open("CosmicBloomDB", 2);
     request.onupgradeneeded = e => e.target.result.createObjectStore("livros", { keyPath: "id" });
-    request.onsuccess = e => {
-      db = e.target.result;
-      carregarLivros();
-    };
+    request.onsuccess = e => { db = e.target.result; renderizar(); };
 
-    function carregarLivros() {
-      const transaction = db.transaction("livros", "readonly");
-      const store = transaction.objectStore("livros");
-      store.getAll().onsuccess = e => {
-        const livros = e.target.result.filter(l => l.year == anoSelecionado);
+    function renderizar() {
+      db.transaction("livros").objectStore("livros").getAll().onsuccess = e => {
         const grid = document.getElementById("booksGrid");
         grid.innerHTML = "";
-        livros.forEach(livro => {
+        e.target.result.filter(l => l.year == ano).forEach(livro => {
           const div = document.createElement("div");
           div.className = "book-card";
-          div.innerHTML = `<img src="${livro.capa}"><h3>${livro.title}</h3><button onclick="abrirPDF('${livro.id}')">Ler PDF</button>`;
+          div.innerHTML = `<img src="${livro.capa}"><h3>${livro.title}</h3><button onclick="abrirPDF('${livro.id}')">Ler</button>`;
           grid.appendChild(div);
         });
       };
     }
 
-    document.getElementById("saveBtn").onclick = async () => {
-      const fileInput = document.getElementById("bookFile");
-      const file = fileInput.files[0];
+    document.getElementById("saveBtn").onclick = () => {
+      const file = document.getElementById("bookFile").files[0];
       const reader = new FileReader();
-      
       reader.onload = async (e) => {
-        let pdf = null;
         let capa = "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg";
+        let pdfData = e.target.result;
         
+        // Extrai capa do PDF
         if (file.type === "application/pdf") {
-          pdf = e.target.result;
-          const typedarray = new Uint8Array(atob(pdf.split(',')[1]).split("").map(c => c.charCodeAt(0)));
-          const doc = await pdfjsLib.getDocument({data: typedarray}).promise;
-          document.getElementById("inputPages").value = doc.numPages; // Exemplo de uso
+          const doc = await pdfjsLib.getDocument({data: new Uint8Array(atob(pdfData.split(',')[1]).split("").map(c=>c.charCodeAt(0)))}).promise;
+          document.getElementById("inputPages").value = doc.numPages;
+          const page = await doc.getPage(1);
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          const v = page.getViewport({scale: 0.5});
+          canvas.width = v.width; canvas.height = v.height;
+          await page.render({canvasContext: ctx, viewport: v}).promise;
+          capa = canvas.toDataURL();
         }
-        
-        const novoLivro = { id: crypto.randomUUID(), title: document.getElementById("inputTitle").value, year: anoSelecionado, capa, pdf };
-        db.transaction("livros", "readwrite").objectStore("livros").add(novoLivro).onsuccess = () => {
-          document.getElementById("modal").style.display = "none";
-          carregarLivros();
-        };
+
+        db.transaction("livros", "readwrite").objectStore("livros").add({
+          id: crypto.randomUUID(), title: document.getElementById("inputTitle").value,
+          year: ano, capa, pdf: pdfData
+        }).onsuccess = () => { document.getElementById("modal").style.display="none"; renderizar(); };
       };
       reader.readAsDataURL(file);
     };
 
-    function abrirPDF(id) {
-      db.transaction("livros", "readonly").objectStore("livros").get(id).onsuccess = e => {
-        const base64 = e.target.result.pdf;
-        const binary = atob(base64.split(',')[1]);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const blob = new Blob([bytes], {type: "application/pdf"});
-        document.getElementById("pdfFrame").src = URL.createObjectURL(blob);
+    async function abrirPDF(id) {
+      db.transaction("livros").objectStore("livros").get(id).onsuccess = async e => {
+        const doc = await pdfjsLib.getDocument({data: new Uint8Array(atob(e.target.result.pdf.split(',')[1]).split("").map(c=>c.charCodeAt(0)))}).promise;
+        const scroller = document.getElementById("pdfScroller");
+        scroller.innerHTML = "";
         document.getElementById("pdfViewer").classList.add("show");
+        for(let i=1; i<=doc.numPages; i++) {
+          const page = await doc.getPage(i);
+          const canvas = document.createElement("canvas");
+          canvas.className = "pdf-page";
+          const ctx = canvas.getContext("2d");
+          const v = page.getViewport({scale: 1.5});
+          canvas.width = v.width; canvas.height = v.height;
+          scroller.appendChild(canvas);
+          await page.render({canvasContext: ctx, viewport: v}).promise;
+        }
       };
     }
 
-    function fecharPDF() {
-      document.getElementById("pdfViewer").classList.remove("show");
-      document.getElementById("pdfFrame").src = "";
-    }
+    function fecharPDF() { document.getElementById("pdfViewer").classList.remove("show"); }
   </script>
 </body>
 </html>
