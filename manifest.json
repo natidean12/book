@@ -8,22 +8,10 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/capa-coquette.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/capa-coquette.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icons/capa-coquette.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
