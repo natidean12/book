@@ -18,10 +18,10 @@
 
   <style>
     :root {
-      --primary-rose: #fcaec1;      /* Rosa vivo das pétalas */
-      --soft-pink: #fbc8d4;         /* Rosa pastel suave */
-      --vintage-gold: #cca05a;      /* Dourado elegante */
-      --bg-overlay: rgba(58, 29, 33, 0.65); /* Filtro Coquette escuro e aconchegante */
+      --primary-rose: #fcaec1;      
+      --soft-pink: #fbc8d4;         
+      --vintage-gold: #cca05a;      
+      --bg-overlay: rgba(58, 29, 33, 0.65); 
       --text-light: #fff2f5;        
     }
 
@@ -33,8 +33,6 @@
       font-family: 'Poppins', sans-serif;
       color: #fff;
       min-height: 100vh;
-      
-      /* Fundo com a nova imagem e o filtro em tom rosa escuro */
       background: 
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
         url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
@@ -64,7 +62,6 @@
       box-shadow: 0 25px 50px rgba(58, 29, 33, 0.4);
     }
 
-    /* Ajuste Perfeito para Celulares */
     @media (max-width: 440px) {
       .card {
         width: 92%;
@@ -74,7 +71,6 @@
       .descricao { font-size: 1.1rem; }
     }
 
-    /* Ajuste Perfeito para o seu iPad */
     @media (min-width: 768px) {
       .card {
         width: 100%;
@@ -107,8 +103,8 @@
 
     button {
       background: linear-gradient(135deg, var(--soft-pink), var(--primary-rose));
-      color: #3a1d21; /* Texto escuro combinando com o tema */
-      border: 2px solid rgba(204, 160, 90, 0.3); /* Toque sutil de dourado */
+      color: #3a1d21; 
+      border: 2px solid rgba(204, 160, 90, 0.3); 
       width: 100%;
       padding: 22px;
       font-size: 1.25rem;
@@ -123,7 +119,6 @@
     button:active {
       transform: scale(0.96);
       opacity: 0.9;
-      background: linear-gradient(135deg, var(--primary-rose), var(--soft-pink));
     }
 
     .frase-container {
@@ -167,13 +162,12 @@
 const btn = document.getElementById("entrarBtn");
 const fraseEl = document.getElementById("frase");
 
-// Personalização acolhedora do botão por horário
+// Personalização do botão por horário
 const hora = new Date().getHours();
 if (hora >= 5 && hora < 12) btn.textContent = "Bom dia! Entrar no Cosmos 📚";
 else if (hora >= 12 && hora < 18) btn.textContent = "Boa tarde! Abrir Jardim Literário 🌸";
-else btn.textContent = "Boa noite! Ler sob as Estrelas 🌙";
+else btn.textContent = "Boa noite! Ler na Biblioteca 🌙";
 
-// Frases rotativas poéticas
 const frases = [
   "“Um leitor vive mil vidas.”",
   "“Livros são sonhos em papel.”",
@@ -182,17 +176,17 @@ const frases = [
   "“O universo guarda suas memórias.”"
 ];
 
-let i = 0;
+let idx = 0;
 setInterval(() => {
   fraseEl.style.opacity = 0;
   setTimeout(() => {
-    i = (i + 1) % frases.length;
-    fraseEl.textContent = frases[i];
+    idx = (idx + 1) % frases.length;
+    fraseEl.textContent = frases[idx];
     fraseEl.style.opacity = 0.6;
   }, 600);
 }, 5000);
 
-// Navegação estável para a sua estante de livros (vai direto para anos.html conforme seu fluxo antigo)
+// O botão só muda de página ao clicar fisicamente nele
 btn.addEventListener("click", () => {
   window.location.href = "anos.html";
 });
