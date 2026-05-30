@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
-  <title>Cosmic Book • Biblioteca ✨</title>
+  <title>Cosmic Book • Seleção de Anos ✨</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght=0,700;1,700&display=swap" rel="stylesheet">
 
@@ -30,79 +30,32 @@
       color: var(--text-light);
       min-height: 100vh;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      
       background: 
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
         url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
+      background-attachment: fixed;
     }
 
     .header-selecao { text-align: center; margin-bottom: 45px; padding: 0 20px; }
-    
-    .header-selecao h1 {
-      font-family: 'Playfair Display', serif; 
-      font-style: italic; 
-      font-size: 2.8rem;
-      color: var(--soft-pink); 
-      margin: 0;
-      text-shadow: 0 2px 15px rgba(251, 200, 212, 0.3);
-    }
-    
-    .header-selecao p { 
-      font-weight: 300; 
-      opacity: 0.9; 
-      margin-top: 8px; 
-      color: var(--text-light);
-      font-size: 1rem;
-      letter-spacing: 0.5px;
-    }
+    .header-selecao h1 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 2.8rem; color: var(--soft-pink); margin: 0; text-shadow: 0 2px 15px rgba(251, 200, 212, 0.3); }
+    .header-selecao p { font-weight: 300; opacity: 0.9; margin-top: 8px; color: var(--text-light); font-size: 1rem; letter-spacing: 0.5px; }
 
-    .grid-anos {
-      display: grid; 
-      grid-template-columns: repeat(2, 1fr);
-      gap: 25px; 
-      width: 90%; 
-      max-width: 480px;
-    }
+    .grid-anos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; width: 90%; max-width: 480px; }
 
     .card-ano {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 24px; 
-      padding: 35px 20px;
-      text-align: center; 
-      cursor: pointer;
-      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px; padding: 35px 20px; text-align: center; cursor: pointer;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s, background 0.3s;
       box-shadow: 0 8px 32px 0 rgba(58, 29, 33, 0.3);
     }
 
-    .card-ano:active, .card-ano:hover {
-      transform: scale(1.04);
-      border-color: var(--soft-pink);
-      background: rgba(251, 200, 212, 0.15); 
-      box-shadow: 0 0 25px rgba(252, 174, 193, 0.3);
-    }
+    .card-ano:active { transform: scale(0.98); background: rgba(251, 200, 212, 0.15); }
 
-    .card-ano h2 { 
-      font-size: 2.4rem; 
-      margin: 0; 
-      color: #ffffff;
-      font-weight: 700;
-    }
-    
-    .card-ano p { 
-      font-size: 0.85rem; 
-      color: var(--soft-pink); 
-      font-weight: 600;
-      margin: 8px 0 0 0; 
-      text-transform: uppercase; 
-      letter-spacing: 1.5px; 
-    }
-
-    .card-ano.atual p {
-      color: var(--vintage-gold);
-    }
+    .card-ano h2 { font-size: 2.4rem; margin: 0; color: #ffffff; font-weight: 700; }
+    .card-ano p { font-size: 0.85rem; color: var(--soft-pink); font-weight: 600; margin: 8px 0 0 0; text-transform: uppercase; letter-spacing: 1.5px; }
+    .card-ano.atual p { color: var(--vintage-gold); }
   </style>
 </head>
 <body>
@@ -115,30 +68,50 @@
   <div class="grid-anos" id="gridAnos"></div>
 
   <script>
-    const anoAtual = new Date().getFullYear(); // Detecta dinamicamente o ano (2026)
+    const anoAtual = new Date().getFullYear();
 
-    function carregarAnos() {
+    // MÁGICA AQUI: Conecta no banco de dados IndexedDB para achar o livro de 2024!
+    function carregarAnosDoBanco() {
+      const request = indexedDB.open("CosmicBloomDB", 1);
+      
+      request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("livros")) {
+          renderizarTela([]);
+          return;
+        }
+        
+        const transaction = db.transaction(["livros"], "readonly");
+        const store = transaction.objectStore("livros");
+        const getAll = store.getAll();
+
+        getAll.onsuccess = () => {
+          const livros = getAll.result || [];
+          // Extrai os anos de todos os livros salvos no banco de dados
+          let listaAnos = livros.map(l => parseInt(l.year)).filter(Boolean);
+          renderizarTela(listaAnos);
+        };
+      };
+      
+      request.onerror = () => renderizarTela([]);
+    }
+
+    function renderizarTela(listaAnos) {
       const grid = document.getElementById("gridAnos");
-      grid.innerHTML = ""; 
+      grid.innerHTML = "";
 
-      // Puxa a sua lista local de livros salvos no iPad (ajuste o nome 'books' se no seu script principal usar outra chave)
-      const livrosLocais = JSON.parse(localStorage.getItem("books")) || [];
-
-      // Extrai os anos dos livros cadastrados sem repetir nenhum
-      let listaAnos = livrosLocais.map(livro => parseInt(livro.year)).filter(Boolean);
+      // Remove anos duplicados
       listaAnos = [...new Set(listaAnos)];
 
-      // Garante que o ano de 2025 (seu histórico) e o ano atual (2026) sempre comecem na tela
+      // Garante que os anos padrão (2025 e 2026) apareçam mesmo se não tiver livros neles ainda
       if (!listaAnos.includes(2025)) listaAnos.push(2025);
       if (!listaAnos.includes(anoAtual)) listaAnos.push(anoAtual);
 
-      // Coloca os anos em ordem decrescente (mais recente primeiro)
+      // Organiza do ano mais novo para o mais antigo (2026, 2025, 2024...)
       listaAnos.sort((a, b) => b - a);
 
-      // Desenha os cards na tela de forma automática
       listaAnos.forEach(ano => {
         const card = document.createElement("div");
-        
         if (ano === anoAtual) {
           card.className = "card-ano atual";
           card.innerHTML = `<h2>${ano}</h2><p>Atual 🌸</p>`;
@@ -146,20 +119,16 @@
           card.className = "card-ano";
           card.innerHTML = `<h2>${ano}</h2><p>Histórico 📜</p>`;
         }
-
-        card.onclick = () => selecionarAno(ano);
+        
+        card.onclick = () => {
+          sessionStorage.setItem("ano_selecionado", ano);
+          window.location.href = "livros.html"; // Vai para a tela de livros filtrando por esse ano
+        };
         grid.appendChild(card);
       });
     }
 
-    function selecionarAno(ano) {
-      // Salva o ano clicado para sua tela principal filtrar os livros certos
-      sessionStorage.setItem("ano_selecionado", ano);
-      window.location.href = "livros.html"; 
-    }
-
-    // Carrega a lista ao abrir a tela
-    window.addEventListener("DOMContentLoaded", carregarAnos);
+    window.addEventListener("DOMContentLoaded", carregarAnosDoBanco);
   </script>
 </body>
 </html>
