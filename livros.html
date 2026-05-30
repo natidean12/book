@@ -359,12 +359,13 @@
   </div>
 
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
     const dbName = "CosmicBloomDB";
     const storeName = "livros";
     let db;
 
+    // Inicialização segura
     const initDB = () => {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(dbName, 1);
@@ -374,235 +375,105 @@
             db.createObjectStore(storeName, { keyPath: "id" });
           }
         };
-        request.onsuccess = (e) => {
-          db = e.target.result;
-          resolve(db);
-        };
+        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
         request.onerror = (e) => reject("Erro ao abrir banco");
       });
     };
 
-    const getAllBooks = () => {
-      return new Promise((resolve) => {
-        const transaction = db.transaction([storeName], "readonly");
-        const store = transaction.objectStore(storeName);
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result || []);
-      });
-    };
+    // --- FUNÇÕES DE BANCO DE DADOS (Mantidas) ---
+    const getAllBooks = () => new Promise((resolve) => {
+      const transaction = db.transaction([storeName], "readonly");
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+    });
 
-    const saveBookDB = (book) => {
-      return new Promise((resolve) => {
-        const transaction = db.transaction([storeName], "readwrite");
-        const store = transaction.objectStore(storeName);
-        store.put(book);
-        transaction.oncomplete = () => resolve();
-      });
-    };
+    const saveBookDB = (book) => new Promise((resolve) => {
+      const transaction = db.transaction([storeName], "readwrite");
+      const store = transaction.objectStore(storeName);
+      store.put(book);
+      transaction.oncomplete = () => resolve();
+    });
 
-    const deleteBookDB = (id) => {
-      return new Promise((resolve) => {
-        const transaction = db.transaction([storeName], "readwrite");
-        const store = transaction.objectStore(storeName);
-        store.delete(id);
-        transaction.oncomplete = () => resolve();
-      });
-    };
+    const deleteBookDB = (id) => new Promise((resolve) => {
+      const transaction = db.transaction([storeName], "readwrite");
+      const store = transaction.objectStore(storeName);
+      store.delete(id);
+      transaction.oncomplete = () => resolve();
+    });
 
+    // --- VARIÁVEIS GLOBAIS ---
     let books = [];
     let selectedStars = 0;
     let selectedImage = "";
     let pdfDataUrl = ""; 
     let editId = null;
 
+    // --- LÓGICA DE INTERFACE ---
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      // 1. Botão Adicionar (Corrigido para garantir o clique)
+      const addBtn = document.getElementById("addBtn");
+      const modal = document.getElementById("modal");
+      const closeModal = document.getElementById("closeModal");
+
+      addBtn.addEventListener("click", () => {
+        editId = null; 
+        selectedStars = 0; 
+        selectedImage = ""; 
+        pdfDataUrl = "";
+        document.getElementById("inputTitle").value = "";
+        document.getElementById("inputPages").value = "";
+        document.getElementById("inputYear").value = sessionStorage.getItem("ano_selecionado") || "2026";
+        atualizarEstrelasVisual();
+        modal.classList.add("show");
+      });
+
+      closeModal.addEventListener("click", () => {
+        modal.classList.remove("show");
+      });
+
+      // Inicia DB
+      initDB().then(() => atualizarInterface());
+    });
+
     async function atualizarInterface() {
       books = await getAllBooks();
       renderBooks();
     }
 
-    function renderStarsHtml(val) {
-      let html = '';
-      for (let i = 1; i <= 5; i++) {
-        if (i <= Math.floor(val)) html += '<span>★</span>';
-        else if (i === Math.ceil(val) && val % 1 !== 0) html += '<span class="half-star">★</span>';
-        else html += '<span style="color:rgba(255,255,255,0.15)">★</span>';
-      }
-      return html;
-    }
-
-    function renderBooks() {
-      const container = document.getElementById("yearContainers");
-      if(!container) return;
-      container.innerHTML = "";
-      
-      const lidos = books.filter(b => b.status === 'lido');
-      document.getElementById("totalPgs").innerText = lidos.reduce((acc, b) => acc + (parseInt(b.pages) || 0), 0).toLocaleString('pt-BR');
-      document.getElementById("stLido").innerText = lidos.length;
-      document.getElementById("stLendo").innerText = books.filter(b => b.status === 'lendo').length;
-      document.getElementById("stFav").innerText = books.filter(b => b.favorito).length;
-      
-      const media = lidos.length ? (lidos.reduce((a,b) => a + (b.estrelas || 0), 0) / lidos.length).toFixed(1) : "0.0";
-      document.getElementById("stMedia").innerText = media;
-
-      const filterYear = sessionStorage.getItem("ano_selecionado");
-      let years = [...new Set(books.map(b => b.year || 2026))].sort((a,b) => b - a);
-      
-      if(filterYear) {
-        years = [parseInt(filterYear)];
-      }
-      
-      years.forEach(year => {
-        const section = document.createElement("div");
-        section.innerHTML = `<h2 class="year-header">${year}</h2><div class="books-grid" id="grid-${year}"></div>`;
-        container.appendChild(section);
-        
-        let filteredBooks = books.filter(b => (b.year || 2026) == year).reverse();
-        
-        filteredBooks.forEach(book => {
-          const card = document.createElement("div");
-          card.className = "book-card";
-          
-          let pdfButtonHtml = book.pdf ? `<button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.id}')">📖 Ler Livro</button>` : '';
-          
-          card.innerHTML = `
-            <img src="${book.capa || 'https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg'}" loading="lazy">
-            <h3 style="font-size:1.1rem; margin:0 0 8px; color:#fff;">${book.title || 'Sem Título'}</h3>
-            <div class="stars">${renderStarsHtml(book.estrelas || 0)}</div>
-            <div class="book-actions">
-              <button class="fav-btn">${book.favorito ? "💜" : "🤍"}</button>
-              <button class="edit-btn">✏️</button>
-              <button class="del-btn">🗑️</button>
-              ${pdfButtonHtml}
-            </div>
-          `;
-          
-          card.querySelector(".del-btn").onclick = async function(e) {
-            e.stopPropagation();
-            if (!this.classList.contains("warning")) {
-              this.classList.add("warning");
-              setTimeout(() => this.classList.remove("warning"), 2500);
-            } else {
-              await deleteBookDB(book.id);
-              atualizarInterface();
-            }
-          };
-          
-          card.querySelector(".fav-btn").onclick = async (e) => { 
-            e.stopPropagation();
-            book.favorito = !book.favorito; 
-            await saveBookDB(book);
-            atualizarInterface();
-          };
-          
-          card.querySelector(".edit-btn").onclick = (e) => {
-            e.stopPropagation();
-            editId = book.id; 
-            selectedStars = book.estrelas; 
-            selectedImage = book.capa;
-            pdfDataUrl = book.pdf || "";
-            document.getElementById("inputTitle").value = book.title;
-            document.getElementById("inputPages").value = book.pages;
-            document.getElementById("inputYear").value = book.year || 2026;
-            document.getElementById("statusSelect").value = book.status;
-            atualizarEstrelasVisual();
-            document.getElementById("modal").classList.add("show");
-          };
-          
-          const targetGrid = document.getElementById(`grid-${year}`);
-          if(targetGrid) targetGrid.appendChild(card);
-        });
-      });
-    }
-
-    // Processamento de Imagens e Extração de Capa de PDF otimizados para iPad
-    document.getElementById("bookFile").onchange = e => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      
-      if (file.type === "application/pdf") {
-        reader.onload = async (event) => {
-          pdfDataUrl = event.target.result;
-          // Padrão provisório caso dê algum erro na leitura da folha 1
-          selectedImage = "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg"; 
-
-          try {
-            const pdfData = new Uint8Array(event.target.result.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
-            const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-            
-            // 1. Grava a quantidade de páginas lidas no input
-            document.getElementById("inputPages").value = pdf.numPages;
-
-            // 2. Extrai a primeira folha para gerar a capa do card automaticamente
-            const page = await pdf.getPage(1);
-            const viewport = page.getViewport({ scale: 0.5 });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            await page.render({ canvasContext: context, viewport: viewport }).promise;
-            selectedImage = canvas.toDataURL('image/jpeg', 0.6);
-          } catch(err) {
-            console.log("Processamento interno de PDF:", err);
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const max_size = 400; 
-            let width = img.width;
-            let height = img.height;
-            if (width > height) {
-              if (width > max_size) { height *= max_size / width; width = max_size; }
-            } else {
-              if (height > max_size) { width *= max_size / height; height = max_size; }
-            }
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            selectedImage = canvas.toDataURL('image/jpeg', 0.6);
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-
-    // Renderizador Nativo de Páginas de PDF (Garante rolagem e toque no iPad)
+    // --- CORREÇÃO DO LEITOR PDF (Substitua a sua função antiga por esta) ---
     async function abrirLeitorPDF(titulo, id) {
       document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
       const area = document.getElementById("pdfRenderArea");
-      area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Abrindo portal literário...</p>";
+      area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Carregando...</p>";
       document.getElementById("pdfViewer").classList.add("show");
 
       const livro = books.find(b => b.id === id);
       if (!livro || !livro.pdf) return;
 
       try {
-        const pdfData = new Uint8Array(livro.pdf.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
-        const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-        area.innerHTML = ""; // Limpa o carregando
+        const base64 = livro.pdf.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-        // Carrega todas as páginas em sequência vertical com rolagem touch perfeita
+        const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+        area.innerHTML = "";
+
         for (let num = 1; num <= pdf.numPages; num++) {
           const page = await pdf.getPage(num);
-          const viewport = page.getViewport({ scale: 1.3 }); // Zoom confortável para leitura no iPad
+          const viewport = page.getViewport({ scale: 1.3 });
           const canvas = document.createElement('canvas');
           canvas.className = "pdf-page-canvas";
           const context = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
-
           area.appendChild(canvas);
           await page.render({ canvasContext: context, viewport: viewport }).promise;
         }
       } catch (err) {
-        area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro ao abrir as páginas deste PDF.</p>";
+        area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro no PDF.</p>";
       }
     }
 
