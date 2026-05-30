@@ -1,7 +1,7 @@
 {
   "name": "Cosmic Bloom • Journal",
   "short_name": "Cosmic Bloom",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#fbc8d4",
   "theme_color": "#fcaec1",
