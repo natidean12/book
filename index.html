@@ -3,125 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
   <link rel="apple-touch-icon" href="icons/capa-coquette.png">
-
+  <link rel="manifest" href="manifest.json">
+  
+  <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Cosmic Bloom">
-  <title>Cosmic Book ✨</title>
+  <link rel="apple-touch-icon" href="icone.png">
   
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:ital,wght=1,700&display=swap" rel="stylesheet">
+  <title>Cosmic Bloom ✨</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --primary-rose: #fcaec1;      
-      --soft-pink: #fbc8d4;         
-      --vintage-gold: #cca05a;      
-      --bg-overlay: rgba(64, 36, 41, 0.6); 
+      --primary-rose: #fcaec1;      /* Rosa vivo das pétalas */
+      --soft-pink: #fbc8d4;         /* Rosa pastel suave */
+      --vintage-gold: #cca05a;      /* Dourado elegante */
+      --bg-overlay: rgba(58, 29, 33, 0.65); /* Filtro Coquette escuro e aconchegante */
       --text-light: #fff2f5;        
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
       font-family: 'Poppins', sans-serif;
-      overflow: hidden; 
-      height: 100vh;
-      background-color: #3a1d21; /* Cor de fundo alternativa enquanto a imagem do Pinterest carrega no iPad */
+      color: #fff;
+      min-height: 100vh;
       
-      /* IMAGEM DE FUNDO NA TELA INTEIRA */
+      /* Fundo com a nova imagem e o filtro em tom rosa escuro */
       background: 
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
-        url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg");
-      background-size: cover;
-      background-position: center;
+        url("https://i.pinimg.com/1200x/1d/72/41/1d72416e266789afa33c189c365ded82.jpg") no-repeat center / cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
-    .splash-container {
-      position: fixed; inset: 0;
-      display: flex; justify-content: center; align-items: center; text-align: center;
-      z-index: 9999;
-      background: transparent; 
-      backdrop-filter: blur(5px); 
-      -webkit-backdrop-filter: blur(5px);
-      transition: opacity 0.8s ease, visibility 0.8s ease;
+    .container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
     }
 
-    .brand-title {
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 40px;
+      border: 1px solid rgba(251, 200, 212, 0.2);
+      text-align: center;
+      animation: fadeUp 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 25px 50px rgba(58, 29, 33, 0.4);
+    }
+
+    /* Ajuste Perfeito para Celulares */
+    @media (max-width: 440px) {
+      .card {
+        width: 92%;
+        padding: 60px 25px;
+      }
+      .titulo { font-size: 2.8rem; }
+      .descricao { font-size: 1.1rem; }
+    }
+
+    /* Ajuste Perfeito para o seu iPad */
+    @media (min-width: 768px) {
+      .card {
+        width: 100%;
+        max-width: 580px;
+        padding: 80px 60px;
+      }
+      .titulo { font-size: 3.8rem; }
+      .descricao { font-size: 1.4rem; }
+    }
+
+    .titulo {
       font-family: 'Playfair Display', serif;
-      font-style: italic; font-weight: 700;
-      color: var(--soft-pink); 
-      font-size: 3.2rem;
-      margin: 0 0 10px 0;
-      text-shadow: 0 0 15px rgba(251, 200, 212, 0.5);
-    }
-
-    .brand-subtitle {
-      font-size: 1.15rem;
-      color: var(--text-light);
-      opacity: 0.9;
-      font-weight: 300;
-      margin: 0;
       font-style: italic;
-      padding: 0 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+      background: linear-gradient(to bottom, #ffffff, var(--soft-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(251, 200, 212, 0.2);
     }
 
-    .loader {
-      margin-top: 30px;
-      font-size: 1.8rem;
-      color: var(--primary-rose);
-      animation: pulsar 1.5s infinite ease-in-out;
+    .descricao {
+      color: var(--text-light);
+      opacity: 0.85;
+      margin-bottom: 50px;
+      line-height: 1.6;
+      font-weight: 300;
     }
 
-    .splash-container.hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
+    button {
+      background: linear-gradient(135deg, var(--soft-pink), var(--primary-rose));
+      color: #3a1d21; /* Texto escuro combinando com o tema */
+      border: 2px solid rgba(204, 160, 90, 0.3); /* Toque sutil de dourado */
+      width: 100%;
+      padding: 22px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 15px 30px rgba(252, 174, 193, 0.3);
+      font-family: 'Poppins', sans-serif;
     }
 
-    @keyframes pulsar {
-      0%, 100% { transform: scale(1); opacity: 0.5; }
-      50% { transform: scale(1.25); opacity: 1; color: var(--vintage-gold); }
+    button:active {
+      transform: scale(0.96);
+      opacity: 0.9;
+      background: linear-gradient(135deg, var(--primary-rose), var(--soft-pink));
+    }
+
+    .frase-container {
+      margin-top: 45px;
+      height: 60px;
+    }
+
+    .frase {
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--text-light);
+      opacity: 0.6;
+      transition: opacity 0.6s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
-  <div id="splash-screen" class="splash-container">
-    <div class="splash-content">
-      <h1 class="brand-title">Cosmic Bloom</h1>
-      <p id="frase-efeito" class="brand-subtitle">“Um leitor vive mil vidas.”</p>
-      <div class="loader">✨</div>
+<div class="container">
+  <div class="card">
+    <h1 class="titulo">Cosmic Bloom</h1>
+    <p class="descricao">
+      Seu espaço sagrado para registrar<br> 
+      cada capítulo da sua história.
+    </p>
+
+    <button id="entrarBtn">Carregando Universo...</button>
+
+    <div class="frase-container">
+        <div class="frase" id="frase">“Um leitor vive mil vidas.”</div>
     </div>
   </div>
+</div>
 
-  <script>
-    const frases = [
-      "“Um leitor vive mil vidas.”",
-      "“Livros são sonhos em papel.”",
-      "“Cada página é um refúgio.”",
-      "“Ler é um ato de cuidado.”"
-    ];
+<script>
+const btn = document.getElementById("entrarBtn");
+const fraseEl = document.getElementById("frase");
 
-    // Sorteia a frase imediatamente para não dar delay visual
-    const fraseEl = document.getElementById("frase-efeito");
-    const indiceAleatorio = Math.floor(Math.random() * frases.length);
-    fraseEl.textContent = frases[indiceAleatorio];
+// Personalização acolhedora do botão por horário
+const hora = new Date().getHours();
+if (hora >= 5 && hora < 12) btn.textContent = "Bom dia! Entrar no Cosmos 📚";
+else if (hora >= 12 && hora < 18) btn.textContent = "Boa tarde! Abrir Jardim Literário 🌸";
+else btn.textContent = "Boa noite! Ler sob as Estrelas 🌙";
 
-    // O iPad prefere que esperemos o carregamento completo (window.load) 
-    // antes de forçar a troca de página para evitar telas brancas
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        const splash = document.getElementById("splash-screen");
-        if(splash) {
-          splash.classList.add("hidden");
-        }
-        
-        // Forma de redirecionamento muito mais amigável com a segurança do ecossistema Apple
-        window.location.replace("anos.html"); 
-      }, 2500); 
-    });
-  </script>
+// Frases rotativas poéticas
+const frases = [
+  "“Um leitor vive mil vidas.”",
+  "“Livros são sonhos em papel.”",
+  "“Cada página é um refúgio.”",
+  "“Ler é um ato de cuidado.”",
+  "“O universo guarda suas memórias.”"
+];
+
+let i = 0;
+setInterval(() => {
+  fraseEl.style.opacity = 0;
+  setTimeout(() => {
+    i = (i + 1) % frases.length;
+    fraseEl.textContent = frases[i];
+    fraseEl.style.opacity = 0.6;
+  }, 600);
+}, 5000);
+
+// Navegação estável para a sua estante de livros (vai direto para anos.html conforme seu fluxo antigo)
+btn.addEventListener("click", () => {
+  window.location.href = "anos.html";
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log("Service Worker Ativo!"))
+    .catch((err) => console.log("Erro SW:", err));
+}
+</script>
 </body>
 </html>
