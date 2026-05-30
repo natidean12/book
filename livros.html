@@ -269,16 +269,15 @@
     #saveBook { background: linear-gradient(135deg, var(--soft-pink), var(--primary-rose)); color: #3a1d21; }
     #closeModal { background: rgba(255,255,255,0.1); color: #fff; }
 
-    /* Estilo do Leitor Otimizado para Gestos no iPad */
+    /* Tela de Visualização limpa igual ao método anterior */
     .pdf-viewer {
-      position: fixed; inset: 0; background: #1c0e10; z-index: 3000;
+      position: fixed; inset: 0; background: #000; z-index: 3000;
       display: none; flex-direction: column;
     }
     .pdf-viewer.show { display: flex; }
-    .pdf-header { background: #12090a; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); }
-    .pdf-header button { background: linear-gradient(135deg, var(--soft-pink), var(--primary-rose)); color: #3a1d21; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; }
-    .pdf-container-scroller { flex: 1; width: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-    .pdf-page-canvas { max-width: 95%; width: 750px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: white; border-radius: 4px; }
+    .pdf-header { background: #1c0e10; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .pdf-header button { background: var(--primary-rose); color: #3a1d21; border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    .pdf-frame { flex: 1; width: 100%; border: none; }
 
     @media (max-width: 768px) {
       .sidebar { width: 100%; height: 70px; bottom: 0; top: auto; flex-direction: row; padding: 0; justify-content: space-around; }
@@ -314,7 +313,7 @@
 
     <div class="stats-container">
       <div class="stat-card"><small>Livros Lidos</small><strong id="stLido">0</strong></div>
-      <div class="stat-card"><small>Lendo Agora</small><strong id="stLendo">0</strong></div>
+      <div class="stat-card"><small>Lendo Agora</strong id="stLendo">0</strong></div>
       <div class="stat-card"><small>Favoritos</small><strong id="stFav">0</strong></div>
       <div class="stat-card"><small>Média Estrelas</small><strong id="stMedia">0.0</strong></div>
     </div>
@@ -347,10 +346,10 @@
 
   <div class="pdf-viewer" id="pdfViewer">
     <div class="pdf-header">
-      <h3 id="pdfViewerTitle" style="margin:0; color:#fff; font-size:1.1rem;">Lendo Livro</h3>
+      <h3 id="pdfViewerTitle" style="margin:0; color:#fff; font-size:1.1rem;">Lendo PDF</h3>
       <button onclick="fecharLeitorPDF()">Fechar Leitura</button>
     </div>
-    <div class="pdf-container-scroller" id="pdfRenderArea"></div>
+    <iframe class="pdf-frame" id="pdfFrame"></iframe>
   </div>
 
   <script>
@@ -359,6 +358,7 @@
     const dbName = "CosmicBloomDB";
     const storeName = "livros";
     let db;
+    let currentBlobUrl = null; // Guarda a URL ativa na memória
 
     const initDB = () => {
       return new Promise((resolve, reject) => {
@@ -373,7 +373,7 @@
           db = e.target.result;
           resolve(db);
         };
-        request.onerror = (e) => reject("Erro ao abrir banco");
+        request.onerror = () => reject("Erro ao abrir banco");
       });
     };
 
@@ -457,7 +457,7 @@
           const card = document.createElement("div");
           card.className = "book-card";
           
-          let pdfButtonHtml = book.pdf ? `<button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.id}')">📖 Ler Livro</button>` : '';
+          let pdfButtonHtml = book.pdf ? `<button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.id}')">📖 Ler PDF</button>` : '';
           
           card.innerHTML = `
             <img src="${book.capa || 'https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg'}" loading="lazy">
@@ -509,38 +509,26 @@
       });
     }
 
-    // Processamento de Imagens e Extração de Capa de PDF otimizados para iPad
+    // Leitura estável do arquivo (Igual à mecânica que funcionava no Supabase)
     document.getElementById("bookFile").onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      
+
       if (file.type === "application/pdf") {
         reader.onload = async (event) => {
           pdfDataUrl = event.target.result;
-          // Padrão provisório caso dê algum erro na leitura da folha 1
-          selectedImage = "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg"; 
+          // Deixa a capa padrão bonita Coquette ativa
+          selectedImage = "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg";
 
+          // Recupera a quantidade exata de páginas usando array nativo do arquivo
           try {
-            const pdfData = new Uint8Array(event.target.result.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
-            const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-            
-            // 1. Grava a quantidade de páginas lidas no input
+            const rawBytes = new Uint8Array(event.target.result.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
+            const pdf = await pdfjsLib.getDocument({data: rawBytes}).promise;
             document.getElementById("inputPages").value = pdf.numPages;
-
-            // 2. Extrai a primeira folha para gerar a capa do card automaticamente
-            const page = await pdf.getPage(1);
-            const viewport = page.getViewport({ scale: 0.5 });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            await page.render({ canvasContext: context, viewport: viewport }).promise;
-            selectedImage = canvas.toDataURL('image/jpeg', 0.6);
           } catch(err) {
-            console.log("Processamento interno de PDF:", err);
+            console.log("Erro ao processar as páginas do PDF:", err);
           }
         };
         reader.readAsDataURL(file);
@@ -568,42 +556,47 @@
       }
     };
 
-    // Renderizador Nativo de Páginas de PDF (Garante rolagem e toque no iPad)
-    async function abrirLeitorPDF(titulo, id) {
-      document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
-      const area = document.getElementById("pdfRenderArea");
-      area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Abrindo portal literário...</p>";
-      document.getElementById("pdfViewer").classList.add("show");
-
+    // Método Clássico de Abertura: Converte a base64 salva de volta para um arquivo físico temporário (Blob URL)
+    function abrirLeitorPDF(titulo, id) {
       const livro = books.find(b => b.id === id);
       if (!livro || !livro.pdf) return;
 
+      document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
+
       try {
-        const pdfData = new Uint8Array(livro.pdf.split(',')[1].atob().split("").map(c => c.charCodeAt(0)));
-        const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-        area.innerHTML = ""; // Limpa o carregando
+        // Converte a string longa do banco de volta para dados binários puros
+        const base64Parts = livro.pdf.split(',');
+        const contentType = base64Parts[0].split(':')[1].split(';')[0];
+        const rawData = atob(base64Parts[1]);
+        const arrayBuffer = new ArrayBuffer(rawData.length);
+        const uintArray = new Uint8Array(arrayBuffer);
 
-        // Carrega todas as páginas em sequência vertical com rolagem touch perfeita
-        for (let num = 1; num <= pdf.numPages; num++) {
-          const page = await pdf.getPage(num);
-          const viewport = page.getViewport({ scale: 1.3 }); // Zoom confortável para leitura no iPad
-          const canvas = document.createElement('canvas');
-          canvas.className = "pdf-page-canvas";
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          area.appendChild(canvas);
-          await page.render({ canvasContext: context, viewport: viewport }).promise;
+        for (let i = 0; i < rawData.length; i++) {
+          uintArray[i] = rawData.charCodeAt(i);
         }
+
+        const blob = new Blob([uintArray], { type: contentType });
+        
+        // Remove lixo anterior da memória para manter o iPad rápido
+        if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+
+        // Cria a URL virtual idêntica à que o Supabase gerava!
+        currentBlobUrl = URL.createObjectURL(blob);
+
+        document.getElementById("pdfFrame").src = currentBlobUrl;
+        document.getElementById("pdfViewer").classList.add("show");
       } catch (err) {
-        area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro ao abrir as páginas deste PDF.</p>";
+        alert("Erro ao decodificar arquivo de leitura.");
       }
     }
 
     function fecharLeitorPDF() {
       document.getElementById("pdfViewer").classList.remove("show");
-      document.getElementById("pdfRenderArea").innerHTML = "";
+      document.getElementById("pdfFrame").src = "";
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = null;
+      }
     }
 
     document.querySelectorAll("#starsSelect span").forEach((s, i) => {
