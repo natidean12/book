@@ -358,14 +358,14 @@
     <div class="pdf-container-scroller" id="pdfRenderArea"></div>
   </div>
 
-  <script>
+<script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
   const dbName = "CosmicBloomDB";
   const storeName = "livros";
   let db, books = [], selectedStars = 0, selectedImage = "", pdfDataUrl = "", editId = null;
 
-  // --- FUNÇÕES DE BANCO ---
+  // --- 1. BANCO DE DADOS ---
   const initDB = () => new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, 1);
     request.onupgradeneeded = (e) => {
@@ -390,40 +390,28 @@
     transaction.oncomplete = () => resolve();
   });
 
-  // --- INICIALIZAÇÃO E EVENTOS ---
+  const deleteBookDB = (id) => new Promise((resolve) => {
+    const transaction = db.transaction([storeName], "readwrite");
+    const store = transaction.objectStore(storeName);
+    store.delete(id);
+    transaction.oncomplete = () => resolve();
+  });
+
+  // --- 2. LÓGICA DO APP E EVENTOS ---
   document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById("modal");
 
-    // Botão Adicionar
-    document.getElementById("addBtn").onclick = () => {
-      editId = null; selectedStars = 0; selectedImage = ""; pdfDataUrl = "";
-      document.getElementById("inputTitle").value = "";
-      document.getElementById("inputPages").value = "";
-      document.getElementById("inputYear").value = sessionStorage.getItem("ano_selecionado") || "2026";
-      atualizarEstrelasVisual();
-      modal.classList.add("show");
-    };
-
-    // Botão Salvar (Configurado exatamente como o seu modelo funcional)
-    document.getElementById("saveBook").onclick = async () => {
-      const bookData = {
-        id: editId || crypto.randomUUID(),
-        title: document.getElementById("inputTitle").value || "Sem Título",
-        pages: parseInt(document.getElementById("inputPages").value) || 0,
-        year: parseInt(document.getElementById("inputYear").value) || 2026,
-        status: document.getElementById("statusSelect").value,
-        estrelas: selectedStars,
-        favorito: editId ? (books.find(b => b.id === editId)?.favorito || false) : false,
-        capa: selectedImage || "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg",
-        pdf: pdfDataUrl 
+    // Upload de Arquivo (Imagem ou PDF)
+    document.getElementById("bookFile").onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (file.type.startsWith('image/')) selectedImage = event.target.result;
+        else if (file.type === 'application/pdf') pdfDataUrl = event.target.result;
       };
-
-      await saveBookDB(bookData);
-      modal.classList.remove("show");
-      location.reload(); // Força a atualização da interface
+      reader.readAsDataURL(file);
     };
-
-    document.getElementById("closeModal").onclick = () => modal.classList.remove("show");
 
     // Estrelas
     document.querySelectorAll("#starsSelect span").forEach((s, i) => {
@@ -434,13 +422,74 @@
       };
     });
 
+    // Salvar
+    document.getElementById("saveBook").onclick = async () => {
+      const bookData = {
+        id: editId || crypto.randomUUID(),
+        title: document.getElementById("inputTitle").value || "Sem Título",
+        pages: parseInt(document.getElementById("inputPages").value) || 0,
+        year: parseInt(document.getElementById("inputYear").value) || new Date().getFullYear(),
+        status: document.getElementById("statusSelect").value,
+        estrelas: selectedStars,
+        capa: selectedImage || "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg",
+        pdf: pdfDataUrl
+      };
+      await saveBookDB(bookData);
+      modal.classList.remove("show");
+      location.reload(); 
+    };
+
+    document.getElementById("addBtn").onclick = () => {
+      editId = null; selectedStars = 0; selectedImage = ""; pdfDataUrl = "";
+      document.getElementById("inputTitle").value = "";
+      document.getElementById("inputPages").value = "";
+      atualizarEstrelasVisual();
+      modal.classList.add("show");
+    };
+
+    document.getElementById("closeModal").onclick = () => modal.classList.remove("show");
+
     initDB().then(() => atualizarInterface());
   });
 
-  // --- FUNÇÕES DE INTERFACE ---
+  // --- 3. INTERFACE E RENDERIZAÇÃO ---
   async function atualizarInterface() {
     books = await getAllBooks();
-    if (typeof renderBooks === 'function') renderBooks();
+    renderBooks();
+  }
+
+  function renderBooks() {
+    const container = document.getElementById("yearContainers");
+    container.innerHTML = "";
+    
+    // Atualiza estatísticas
+    const lidos = books.filter(b => b.status === 'lido');
+    document.getElementById("stLido").innerText = lidos.length;
+    document.getElementById("stLendo").innerText = books.filter(b => b.status === 'lendo').length;
+    document.getElementById("stFav").innerText = books.filter(b => b.favorito).length;
+    document.getElementById("totalPgs").innerText = lidos.reduce((acc, b) => acc + (b.pages || 0), 0);
+
+    // Agrupa por ano
+    const years = [...new Set(books.map(b => b.year))].sort((a,b) => b - a);
+    years.forEach(year => {
+      const section = document.createElement("div");
+      section.innerHTML = `<h2 class="year-header">${year}</h2><div class="books-grid" id="grid-${year}"></div>`;
+      container.appendChild(section);
+      
+      books.filter(b => b.year == year).forEach(book => {
+        const card = document.createElement("div");
+        card.className = "book-card";
+        card.innerHTML = `
+          <img src="${book.capa}">
+          <h3>${book.title}</h3>
+          <button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.id}')">📖 Ler PDF</button>
+          <div class="book-actions">
+            <button onclick="deletarLivro('${book.id}')">🗑️</button>
+          </div>
+        `;
+        document.getElementById(`grid-${year}`).appendChild(card);
+      });
+    });
   }
 
   function atualizarEstrelasVisual() {
@@ -452,14 +501,21 @@
     });
   }
 
+  async function deletarLivro(id) {
+    if(confirm("Excluir este livro?")) {
+      await deleteBookDB(id);
+      location.reload();
+    }
+  }
+
   async function abrirLeitorPDF(titulo, id) {
     document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
     const area = document.getElementById("pdfRenderArea");
-    area.innerHTML = "<p style='color:#fbc8d4; text-align:center; margin-top:40px;'>Carregando...</p>";
+    area.innerHTML = "<p>Carregando...</p>";
     document.getElementById("pdfViewer").classList.add("show");
 
     const livro = books.find(b => b.id === id);
-    if (!livro || !livro.pdf) return;
+    if (!livro || !livro.pdf) { area.innerHTML = "PDF não encontrado."; return; }
 
     try {
       const base64 = livro.pdf.split(',')[1];
@@ -475,12 +531,11 @@
         const canvas = document.createElement('canvas');
         canvas.className = "pdf-page-canvas";
         const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        canvas.height = viewport.height; canvas.width = viewport.width;
         area.appendChild(canvas);
         await page.render({ canvasContext: context, viewport: viewport }).promise;
       }
-    } catch (err) { area.innerHTML = "<p style='color:red; text-align:center; margin-top:40px;'>Erro.</p>"; }
+    } catch (err) { area.innerHTML = "Erro ao carregar PDF."; }
   }
 
   function fecharLeitorPDF() {
