@@ -359,21 +359,18 @@
   </div>
 
 <script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-
+  // --- 1. CONFIGURAÇÃO DO BANCO DE DADOS ---
   const dbName = "CosmicBloomDB";
   const storeName = "livros";
-  let db, books = [], selectedStars = 0, selectedImage = "", pdfDataUrl = "", editId = null;
+  let db;
 
-  // --- 1. BANCO DE DADOS ---
-  const initDB = () => new Promise((resolve, reject) => {
+  const initDB = () => new Promise((resolve) => {
     const request = indexedDB.open(dbName, 1);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName, { keyPath: "id" });
     };
     request.onsuccess = (e) => { db = e.target.result; resolve(db); };
-    request.onerror = (e) => reject("Erro ao abrir banco");
   });
 
   const getAllBooks = () => new Promise((resolve) => {
@@ -397,94 +394,56 @@
     transaction.oncomplete = () => resolve();
   });
 
-  // --- 2. LÓGICA DO APP E EVENTOS ---
-  document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById("modal");
+  // --- 2. VARIÁVEIS GLOBAIS E ESTADO ---
+  let books = [], selectedStars = 0, selectedImage = "", editId = null;
 
-    // Upload de Arquivo (Imagem ou PDF)
-    document.getElementById("bookFile").onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (file.type.startsWith('image/')) selectedImage = event.target.result;
-        else if (file.type === 'application/pdf') pdfDataUrl = event.target.result;
+  // --- 3. LÓGICA DE COMPRESSÃO (PARA NÃO TRAVAR) ---
+  function comprimirImagem(file, callback) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const max_size = 400; // Mantém a imagem em tamanho ideal para web
+        let width = img.width, height = img.height;
+        if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+        else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL('image/jpeg', 0.6));
       };
-      reader.readAsDataURL(file);
+      img.src = event.target.result;
     };
-
-    // Estrelas
-    document.querySelectorAll("#starsSelect span").forEach((s, i) => {
-      s.onclick = () => {
-        let val = i + 1;
-        selectedStars = (selectedStars === val) ? val - 0.5 : ((selectedStars === val - 0.5) ? 0 : val);
-        atualizarEstrelasVisual();
-      };
-    });
-
-    // Salvar
-    document.getElementById("saveBook").onclick = async () => {
-      const bookData = {
-        id: editId || crypto.randomUUID(),
-        title: document.getElementById("inputTitle").value || "Sem Título",
-        pages: parseInt(document.getElementById("inputPages").value) || 0,
-        year: parseInt(document.getElementById("inputYear").value) || new Date().getFullYear(),
-        status: document.getElementById("statusSelect").value,
-        estrelas: selectedStars,
-        capa: selectedImage || "https://i.pinimg.com/736x/8d/a6/f3/8da6f3d9d43d3bfa24bdf88138b0051b.jpg",
-        pdf: pdfDataUrl
-      };
-      await saveBookDB(bookData);
-      modal.classList.remove("show");
-      location.reload(); 
-    };
-
-    document.getElementById("addBtn").onclick = () => {
-      editId = null; selectedStars = 0; selectedImage = ""; pdfDataUrl = "";
-      document.getElementById("inputTitle").value = "";
-      document.getElementById("inputPages").value = "";
-      atualizarEstrelasVisual();
-      modal.classList.add("show");
-    };
-
-    document.getElementById("closeModal").onclick = () => modal.classList.remove("show");
-
-    initDB().then(() => atualizarInterface());
-  });
-
-  // --- 3. INTERFACE E RENDERIZAÇÃO ---
-  async function atualizarInterface() {
-    books = await getAllBooks();
-    renderBooks();
+    reader.readAsDataURL(file);
   }
 
-  function renderBooks() {
+  // --- 4. RENDERIZAÇÃO E EVENTOS ---
+  async function atualizarInterface() {
+    books = await getAllBooks();
     const container = document.getElementById("yearContainers");
     container.innerHTML = "";
     
-    // Atualiza estatísticas
     const lidos = books.filter(b => b.status === 'lido');
     document.getElementById("stLido").innerText = lidos.length;
     document.getElementById("stLendo").innerText = books.filter(b => b.status === 'lendo').length;
     document.getElementById("stFav").innerText = books.filter(b => b.favorito).length;
-    document.getElementById("totalPgs").innerText = lidos.reduce((acc, b) => acc + (b.pages || 0), 0);
-
-    // Agrupa por ano
-    const years = [...new Set(books.map(b => b.year))].sort((a,b) => b - a);
+    document.getElementById("totalPgs").innerText = lidos.reduce((acc, b) => acc + (parseInt(b.pages) || 0), 0);
+    
+    const years = [...new Set(books.map(b => b.year || 2026))].sort((a,b) => b - a);
     years.forEach(year => {
       const section = document.createElement("div");
       section.innerHTML = `<h2 class="year-header">${year}</h2><div class="books-grid" id="grid-${year}"></div>`;
       container.appendChild(section);
-      
-      books.filter(b => b.year == year).forEach(book => {
+      books.filter(b => (b.year || 2026) == year).forEach(book => {
         const card = document.createElement("div");
         card.className = "book-card";
         card.innerHTML = `
-          <img src="${book.capa}">
+          <img src="${book.capa}" loading="lazy">
           <h3>${book.title}</h3>
-          <button class="read-pdf-btn" onclick="abrirLeitorPDF('${book.title}', '${book.id}')">📖 Ler PDF</button>
           <div class="book-actions">
-            <button onclick="deletarLivro('${book.id}')">🗑️</button>
+            <button onclick="toggleFav('${book.id}')">${book.favorito ? "💜" : "🤍"}</button>
+            <button onclick="editarLivro('${book.id}')">✏️</button>
+            <button onclick="removerLivro('${book.id}')">🗑️</button>
           </div>
         `;
         document.getElementById(`grid-${year}`).appendChild(card);
@@ -492,56 +451,50 @@
     });
   }
 
-  function atualizarEstrelasVisual() {
-    document.querySelectorAll("#starsSelect span").forEach((s, i) => {
-      let val = i + 1;
-      s.classList.remove("selected", "half-selected");
-      if (val <= Math.floor(selectedStars)) s.classList.add("selected");
-      else if (val === Math.ceil(selectedStars) && selectedStars % 1 !== 0) s.classList.add("half-selected");
-    });
-  }
+  // --- 5. AÇÕES ---
+  document.getElementById("bookFile").onchange = e => {
+    if (e.target.files[0]) comprimirImagem(e.target.files[0], (base64) => { selectedImage = base64; });
+  };
 
-  async function deletarLivro(id) {
-    if(confirm("Excluir este livro?")) {
-      await deleteBookDB(id);
-      location.reload();
-    }
-  }
+  document.getElementById("saveBook").onclick = async () => {
+    const bookData = {
+      id: editId || crypto.randomUUID(),
+      title: document.getElementById("inputTitle").value,
+      pages: parseInt(document.getElementById("inputPages").value) || 0,
+      year: parseInt(document.getElementById("inputYear").value) || 2026,
+      status: document.getElementById("statusSelect").value,
+      estrelas: selectedStars,
+      favorito: editId ? books.find(b => b.id === editId).favorito : false,
+      capa: selectedImage || "https://i.ibb.co/C07F1kL/placeholder-book-cover.png"
+    };
+    await saveBookDB(bookData);
+    document.getElementById("modal").classList.remove("show");
+    atualizarInterface();
+  };
 
-  async function abrirLeitorPDF(titulo, id) {
-    document.getElementById("pdfViewerTitle").innerText = `Lendo: ${titulo}`;
-    const area = document.getElementById("pdfRenderArea");
-    area.innerHTML = "<p>Carregando...</p>";
-    document.getElementById("pdfViewer").classList.add("show");
+  window.toggleFav = async (id) => {
+    const b = books.find(x => x.id === id);
+    b.favorito = !b.favorito;
+    await saveBookDB(b);
+    atualizarInterface();
+  };
 
-    const livro = books.find(b => b.id === id);
-    if (!livro || !livro.pdf) { area.innerHTML = "PDF não encontrado."; return; }
+  window.removerLivro = async (id) => { if(confirm("Remover este livro?")) { await deleteBookDB(id); atualizarInterface(); } };
 
-    try {
-      const base64 = livro.pdf.split(',')[1];
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  window.editarLivro = (id) => {
+    const b = books.find(x => x.id === id);
+    editId = b.id; selectedImage = b.capa;
+    document.getElementById("inputTitle").value = b.title;
+    document.getElementById("inputPages").value = b.pages;
+    document.getElementById("inputYear").value = b.year;
+    document.getElementById("statusSelect").value = b.status;
+    document.getElementById("modal").classList.add("show");
+  };
 
-      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
-      area.innerHTML = "";
-      for (let num = 1; num <= pdf.numPages; num++) {
-        const page = await pdf.getPage(num);
-        const viewport = page.getViewport({ scale: 1.3 });
-        const canvas = document.createElement('canvas');
-        canvas.className = "pdf-page-canvas";
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height; canvas.width = viewport.width;
-        area.appendChild(canvas);
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
-      }
-    } catch (err) { area.innerHTML = "Erro ao carregar PDF."; }
-  }
+  document.getElementById("addBtn").onclick = () => { editId = null; selectedImage = ""; document.getElementById("modal").classList.add("show"); };
+  document.getElementById("closeModal").onclick = () => document.getElementById("modal").classList.remove("show");
 
-  function fecharLeitorPDF() {
-    document.getElementById("pdfViewer").classList.remove("show");
-    document.getElementById("pdfRenderArea").innerHTML = "";
-  }
+  initDB().then(atualizarInterface);
 </script>
 </body>
 </html>
