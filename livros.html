@@ -357,7 +357,7 @@
     </div>
     <div class="pdf-container-scroller" id="pdfRenderArea"></div>
   </div>
-<script>
+    <script>
     // --- LÓGICA DO INDEXEDDB ---
     const dbName = "CosmicBloomDB";
     const storeName = "livros";
@@ -557,7 +557,10 @@
 
     document.getElementById("closeModal").onclick = () => document.getElementById("modal").classList.remove("show");
 
-    document.getElementById("saveBook").onclick = async () => {
+document.getElementById("saveBook").onclick = async () => {
+      // Procura o livro atual se for uma edição
+      const livroExistente = editId ? books.find(b => b.id === editId) : null;
+
       const bookData = {
         id: editId || crypto.randomUUID(),
         title: document.getElementById("inputTitle").value || "Sem Título",
@@ -565,7 +568,8 @@
         year: parseInt(document.getElementById("inputYear").value) || new Date().getFullYear(),
         status: document.getElementById("statusSelect").value,
         estrelas: selectedStars,
-        favorito: editId ? books.find(b => b.id === editId).favorito : false,
+        // Se o livro existir, mantém o estado de favorito, senão define como false
+        favorito: livroExistente ? livroExistente.favorito : false,
         capa: selectedImage || "https://i.ibb.co/C07F1kL/placeholder-book-cover.png"
       };
 
@@ -573,7 +577,7 @@
       document.getElementById("modal").classList.remove("show");
       atualizarInterface();
     };
-
+    
     // Inicialização do APP
     initDB().then(() => {
       atualizarInterface();
