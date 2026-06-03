@@ -128,35 +128,64 @@
     <div class="challenge-grid" id="grid"></div>
   </main>
 
-  <script>
-    let progresso = JSON.parse(localStorage.getItem('cosmic_challenge')) || [];
-    const goalInput = document.getElementById('goalInput');
-    const bar = document.getElementById('bar');
-    const grid = document.getElementById('grid');
+<script>
+  // Carrega a meta e o progresso do localStorage
+  let goal = parseInt(localStorage.getItem('cosmic_goal')) || 50;
+  let progresso = JSON.parse(localStorage.getItem('cosmic_challenge')) || [];
 
-    function render() {
-      const meta = parseInt(goalInput.value) || 0;
-      grid.innerHTML = '';
-      for (let i = 1; i <= meta; i++) {
-        const box = document.createElement('div');
-        box.className = 'item-node' + (progresso.includes(i) ? ' done' : '');
-        box.innerText = i;
-        box.onclick = () => {
-          if (progresso.includes(i)) progresso = progresso.filter(n => n !== i);
-          else progresso.push(i);
-          localStorage.setItem('cosmic_challenge', JSON.stringify(progresso));
-          render();
-        };
-        grid.appendChild(box);
-      }
-      const pct = (progresso.length / meta) * 100;
-      bar.style.width = Math.min(pct, 100) + '%';
-      document.getElementById('statusText').innerText = `${progresso.length} / ${meta} livros lidos`;
+  const goalInput = document.getElementById('goalInput');
+  const bar = document.getElementById('bar');
+  const grid = document.getElementById('grid');
+
+  // Inicializa o input com a meta salva
+  goalInput.value = goal;
+
+  function render() {
+    const meta = parseInt(goalInput.value) || 0;
+    
+    // Atualiza a meta no localStorage quando o usuário digita
+    if (meta !== goal) {
+      goal = meta;
+      localStorage.setItem('cosmic_goal', goal);
     }
 
-    goalInput.oninput = render;
-    document.getElementById('resetBtn').onclick = () => { if(confirm('Zerar tudo?')) { progresso = []; render(); } };
-    render();
-  </script>
+    grid.innerHTML = '';
+    for (let i = 1; i <= meta; i++) {
+      const box = document.createElement('div');
+      box.className = 'item-node' + (progresso.includes(i) ? ' done' : '');
+      box.innerText = i;
+      box.onclick = () => {
+        if (progresso.includes(i)) {
+          progresso = progresso.filter(n => n !== i);
+        } else {
+          progresso.push(i);
+        }
+        localStorage.setItem('cosmic_challenge', JSON.stringify(progresso));
+        render();
+      };
+      grid.appendChild(box);
+    }
+
+    // Atualiza barra e texto
+    const pct = meta > 0 ? (progresso.length / meta) * 100 : 0;
+    bar.style.width = Math.min(pct, 100) + '%';
+    document.getElementById('statusText').innerText = `${progresso.length} / ${meta} livros lidos`;
+  }
+
+  // Quando o usuário mudar o número, ele recalcula
+  goalInput.oninput = render;
+
+  // Zerar apenas o progresso, mantendo a meta (ou zere ambos se preferir)
+  document.getElementById('resetBtn').onclick = () => { 
+    if(confirm('Tem certeza que deseja limpar todo o seu progresso de leitura?')) { 
+      progresso = []; 
+      localStorage.removeItem('cosmic_challenge');
+      render(); 
+    } 
+  };
+
+  // Render inicial
+  render();
+</script>
 </body>
 </html>
